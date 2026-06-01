@@ -1,9 +1,9 @@
 #Chaque équipe est propriétaire de son dossier
-/NN/  @HB/team-nn
-/BDT/  @HB/team-bdt
-/FA/  @HB/team-fa
-/Stat/ @HB/team-stat
-/Syst/  @HB/team-syst
+/NN/  @ST4-BlackSwan/neural-network
+/BDT/  @ST4-BlackSwan/bdt
+/FA/  @ST4-BlackSwan/fa
+/Stat/ @ST4-BlackSwan/stat
+/Syst/  @HB/ST4-BlackSwan/syst
 
 # Dossier partagé : tout le monde peut lire, personne ne peut merger sans un admin
 /shared/  @HB/admins
