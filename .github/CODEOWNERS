@@ -3,7 +3,4 @@
 /BDT/  @ST4-BlackSwan/bdt
 /FA/  @ST4-BlackSwan/fa
 /Stat/ @ST4-BlackSwan/stat
-/Syst/  @HB/ST4-BlackSwan/syst
-
-# Dossier partagé : tout le monde peut lire, personne ne peut merger sans un admin
-/shared/  @HB/admins
+/Syst/  @ST4-BlackSwan/syst
