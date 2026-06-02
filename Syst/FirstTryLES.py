@@ -1,5 +1,8 @@
+import matplotlib.pyplot as plt
+from sklearn.ensemble import GradientBoostingClassifier
 from HiggsML.systematics import systematics
-from HiggsML.datasets import download_dataset*
+from HiggsML.datasets import download_dataset
+from boosted_decision_tree import BoostedDecisionTree
 
 """Index(['PRI_lep_pt', 'PRI_lep_eta', 'PRI_lep_phi', 'PRI_had_pt', 'PRI_had_eta',
        'PRI_had_phi', 'PRI_jet_leading_pt', 'PRI_jet_leading_eta',
@@ -20,28 +23,30 @@ data_normal = download_dataset(
 
 data_normal.load_train_set()
 data_train = data_normal.get_train_set()
-
+bdt = BoostedDecisionTree(data_train)
 # Appliquer une variation TES de 3%
 data_with_TES = systematics(
     data_train,
     tes=1.03  # +3% sur l'énergie des taus
 )
 
-import matplotlib.pyplot as plt
+model = GradientBoostingClassifier(n_estimators=100)
+cols_a_exclure = ['labels', 'detailed_labels', 'weights']
+X = data_train.drop(columns=cols_a_exclure)
+y = data_train['labels']
+w = data_train['weights']
 
-plt.figure(figsize=(12,4))
+bdt.fit(X, y)
+score = bdt.predict(X) # probabilité d'être signal
 
-plt.subplot(1,2,1)
-plt.hist(data_train['PRI_had_pt'], bins=50, alpha=0.5, label='Normal')
-plt.hist(data_with_TES['PRI_had_pt'], bins=50, alpha=0.5, label='TES +3%')
+# 3. Plotter
+plt.figure(figsize=(8, 5))
+
+plt.hist(score, bins=50, range=(0,1), 
+         alpha=0.6, color='red', label='Signal')
+
+plt.xlabel("Score BDT")
+plt.ylabel("Nombre d'événements")
+plt.title("Distribution du score — Signal vs Bruit de fond")
 plt.legend()
-plt.title("PRI_had_pt — sensible au TES")
-
-plt.subplot(1,2,2)
-plt.hist(data_train['PRI_met'], bins=50, alpha=0.5, label='Normal')
-plt.hist(data_with_TES['PRI_met'], bins=50, alpha=0.5, label='TES +3%')
-plt.legend()
-plt.title("PRI_met — sensible au TES")
-
-plt.tight_layout()
 plt.show()
