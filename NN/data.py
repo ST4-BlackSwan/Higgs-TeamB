@@ -116,12 +116,15 @@ if __name__ == "__main__":
     print("--- 1. Chargement et Nettoyage des données ---")
     features, target, weights = load_and_clean_blackswan()
     
+    
     print("--- 2. Affichage des distributions (optionnel) ---")
     # Décommentez la ligne ci-dessous si vous voulez voir les plots au lancement du script
     plot_distributions(features, target, weights)
     
+    
     print("--- 3. Séparation, Scaler et Renormalisation des poids ---")
     X_train, X_test, y_train, y_test, w_train, w_test, scaler = prepare_datasets(features, target, weights)
+    
     
     print("\n[Vérification des Shapes]")
     print(f"Train features: {X_train.shape} | Test features: {X_test.shape}")
