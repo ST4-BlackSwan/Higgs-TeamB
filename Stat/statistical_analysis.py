@@ -100,3 +100,10 @@ def compute_mub(score, weight, saved_info):
         "del_mu_sys": del_mu_sys,
         "del_mu_tot": del_mu_tot,
     }
+    
+
+def binning_signal(score, weight, bins, threshold):
+    ne,se = np.histogram(score, bins=bins, range=(threshold, 1), weights=weight)
+    sc = (se[:-1] + se[1:]) / 2
+    plt.errorbar(sc, ne, yerr=np.sqrt(ne), fmt='ko');
+    return ne, se
