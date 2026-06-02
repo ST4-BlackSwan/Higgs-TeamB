@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from boosted_decision_tree_hyperparameters import BoostedDecisionTreeHyperParameters
 from HiggsML.datasets import download_dataset
 from sklearn.model_selection import train_test_split
 
-from BDT.boosted_decision_tree import BoostedDecisionTree
+from boosted_decision_tree import BoostedDecisionTree
 
 data = download_dataset(
     "blackSwan_data")
@@ -31,7 +32,7 @@ S_values = []
 B_values = []
 
 
-bdt = BoostedDecisionTree(X_train)
+bdt = BoostedDecisionTreeHyperParameters()
 bdt.fit(X_train, y_train, w_train)
 predictions = bdt.predict(X_test)
 for threshold in thresholds:
