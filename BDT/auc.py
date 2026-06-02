@@ -3,7 +3,7 @@ from sklearn.metrics import roc_auc_score
 
 from HiggsML.datasets import download_dataset
 
-from BDT.boosted_decision_tree import BoostedDecisionTree
+from boosted_decision_tree import BoostedDecisionTree
 
 data = download_dataset(
     "blackSwan_data")
@@ -29,3 +29,4 @@ bdt.fit(X_train, y_train, w_train)
 predictions = bdt.predict(X_test)
 auc = roc_auc_score(y_test, predictions, sample_weight=w_test)
 print("AUC =", auc)
+
