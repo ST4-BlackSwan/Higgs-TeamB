@@ -118,7 +118,7 @@ if __name__ == "__main__":
     
     print("--- 2. Affichage des distributions (optionnel) ---")
     # Décommentez la ligne ci-dessous si vous voulez voir les plots au lancement du script
-    # plot_distributions(features, target, weights)
+    plot_distributions(features, target, weights)
     
     print("--- 3. Séparation, Scaler et Renormalisation des poids ---")
     X_train, X_test, y_train, y_test, w_train, w_test, scaler = prepare_datasets(features, target, weights)
