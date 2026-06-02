@@ -27,8 +27,9 @@ Task 2 : Systematic Uncertainty
 4. return the mu and its uncertainty
 
 """
-def calculate_saved_info(model, holdout_set):
 
+
+def calculate_saved_info(model, holdout_set):
 
     score = model.predict(holdout_set["data"])
 
@@ -45,10 +46,7 @@ def calculate_saved_info(model, holdout_set):
 
     beta = np.sum(holdout_set["weights"] * score * (1 - label))
 
-    saved_info = {
-        "beta": beta,
-        "gamma": gamma
-    }
+    saved_info = {"beta": beta, "gamma": gamma}
 
     print("saved_info", saved_info)
 
@@ -56,7 +54,7 @@ def calculate_saved_info(model, holdout_set):
 
 
 def compute_mu(score, weight, saved_info):
-    
+
     score = score.flatten() > 0.5
     score = score.astype(int)
 
@@ -74,25 +72,25 @@ def compute_mu(score, weight, saved_info):
         "del_mu_tot": del_mu_tot,
     }
 
+
 def compute_mub(score, weight, saved_info):
-    
-    beta  = saved_info["beta"]
+
+    beta = saved_info["beta"]
     gamma = saved_info["gamma"]
-    
+
     score = score.flatten() > 0.5
     score = score.astype(int)
-    n_obs= np.sum(score * weight)
+    n_obs = np.sum(score * weight)
 
     def NLL(mu):
         n_pred = mu * gamma + beta
         return -2 * poisson.logpmf(n_obs, n_pred)
-    
+
     m = Minuit(NLL, mu=1.0)
     m.limits["mu"] = (0, None)
     m.migrad()
-    
-    
-    mu_hat      = m.values["mu"]
+
+    mu_hat = m.values["mu"]
     del_mu_stat = m.errors["mu"]
     del_mu_sys = abs(0.0 * mu)
     del_mu_tot = np.sqrt(del_mu_stat**2 + del_mu_sys**2)
