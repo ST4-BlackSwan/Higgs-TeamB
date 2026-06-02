@@ -1,6 +1,9 @@
+from cProfile import label
+
 import numpy as np
 from HiggsML.systematics import systematics
 from iminuit import Minuit
+from iminuit.cost import ExtendedBinnedNLL
 from scipy.stats import poisson
 
 """
@@ -102,8 +105,12 @@ def compute_mub(score, weight, saved_info):
     }
     
 
-def binning_signal(score, weight, bins, threshold):
-    ne,se = np.histogram(score, bins=bins, range=(threshold, 1), weights=weight)
-    sc = (se[:-1] + se[1:]) / 2
-    plt.errorbar(sc, ne, yerr=np.sqrt(ne), fmt='ko');
-    return ne, se
+def binning_signal(holdout_set,model,number_bins, threshold):
+    bins= np.linspace(threshold, 1, number_bins + 1)
+    set_signal=holdout_set["data"][holdout_set["labels"]==1]
+    set_background=holdout_set["data"][holdout_set["labels"]==0]
+    score_signal=model.predict(set_signal)
+    score_background=model.predict(set_background)
+    hs,edges= np.histogram(score_signal, bins=bins, weights=holdout_set["weights"][holdout_set["labels"]==1])
+    hb,edges= np.histogram(score_background, bins=bins, weights=holdout_set["weights"][holdout_set["labels"]==0])
+    return hs, hb,edges
