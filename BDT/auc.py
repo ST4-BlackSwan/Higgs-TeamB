@@ -28,5 +28,6 @@ bdt.fit(X_train, y_train, w_train)
 
 predictions = bdt.predict(X_test)
 auc = roc_auc_score(y_test, predictions, sample_weight=w_test)
+
 print("AUC =", auc)
 
