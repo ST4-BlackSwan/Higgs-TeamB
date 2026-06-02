@@ -44,70 +44,60 @@ for jesval in L:
     plt.show()
 
 
-
-
-
-data_with_JES = systematics(
-      data_train,
-      jes=1 # variation de jes 
-  )
+data_with_JES = systematics(data_train, jes=1)  # variation de jes
 import matplotlib.pyplot as plt
 
 # Get the feature columns (assuming they are all columns except 'weights', 'labels', 'detailed_labels')
-non_feature_cols = ['weights', 'labels', 'detailed_labels']
+non_feature_cols = ["weights", "labels", "detailed_labels"]
 feature_cols = [col for col in data_with_JES.columns if col not in non_feature_cols]
 
-  # Get raw prediction scores for data_with_JES from the BDT model (ingestion.model.model.predict)
-  # Assuming predict returns probabilities/scores directly.
+# Get raw prediction scores for data_with_JES from the BDT model (ingestion.model.model.predict)
+# Assuming predict returns probabilities/scores directly.
 raw_scores_jes = ingestion.model.model.predict(data_with_JES[feature_cols])
 
-signal_scores_jes = raw_scores_jes[data_with_JES['labels'] == 1]
-background_scores_jes = raw_scores_jes[data_with_JES['labels'] == 0]
+signal_scores_jes = raw_scores_jes[data_with_JES["labels"] == 1]
+background_scores_jes = raw_scores_jes[data_with_JES["labels"] == 0]
 
 print(signal_scores_jes)
 
 s = 0
-b = 0 
+b = 0
 n = 0
-for i in signal_scores_jes :
-  if i > 0.5 :
-    s=s+1
-for i in background_scores_jes :
-    if i > 0.5 :
-      b=b+1
-n=s+b
-print(n,s,b)
+for i in signal_scores_jes:
+    if i > 0.5:
+        s = s + 1
+for i in background_scores_jes:
+    if i > 0.5:
+        b = b + 1
+n = s + b
+print(n, s, b)
 
 
-
-L = np.linspace(0.97,1.03,5)
+L = np.linspace(0.97, 1.03, 5)
 for jesval in L:
-  data_with_JES = systematics(
-      data_train,
-      jes=jesval  # variation de jes 
-  )
-  import matplotlib.pyplot as plt
+    data_with_JES = systematics(data_train, jes=jesval)  # variation de jes
+    import matplotlib.pyplot as plt
 
-  # Get the feature columns (assuming they are all columns except 'weights', 'labels', 'detailed_labels')
-  non_feature_cols = ['weights', 'labels', 'detailed_labels']
-  feature_cols = [col for col in data_with_JES.columns if col not in non_feature_cols]
+    # Get the feature columns (assuming they are all columns except 'weights', 'labels', 'detailed_labels')
+    non_feature_cols = ["weights", "labels", "detailed_labels"]
+    feature_cols = [col for col in data_with_JES.columns if col not in non_feature_cols]
 
-  # Get raw prediction scores for data_with_JES from the BDT model (ingestion.model.model.predict)
-  # Assuming predict returns probabilities/scores directly.
-  raw_scores_jes = ingestion.model.model.predict(data_with_JES[feature_cols])
+    # Get raw prediction scores for data_with_JES from the BDT model (ingestion.model.model.predict)
+    # Assuming predict returns probabilities/scores directly.
+    raw_scores_jes = ingestion.model.model.predict(data_with_JES[feature_cols])
 
-  signal_scores_jes = raw_scores_jes[data_with_JES['labels'] == 1]
-  background_scores_jes = raw_scores_jes[data_with_JES['labels'] == 0]
+    signal_scores_jes = raw_scores_jes[data_with_JES["labels"] == 1]
+    background_scores_jes = raw_scores_jes[data_with_JES["labels"] == 0]
 
-  print(signal_scores_jes)
+    print(signal_scores_jes)
 
-  s = 0
-  b = 0 
-  for i in signal_scores_jes :
-    if i > 0.5 :
-      s=s+1
-  for i in background_scores_jes :
-      if i > 0.5 :
-        b=b+1
-  mu = (n-b)/s
-  print(mu,s,b)
+    s = 0
+    b = 0
+    for i in signal_scores_jes:
+        if i > 0.5:
+            s = s + 1
+    for i in background_scores_jes:
+        if i > 0.5:
+            b = b + 1
+    mu = (n - b) / s
+    print(mu, s, b)
