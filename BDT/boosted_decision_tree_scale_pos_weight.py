@@ -13,7 +13,7 @@ class BoostedDecisionTreeScalePosWeight:
             gamma=0.15,
             tree_method='hist',      
             random_state=31415,
-            early_stopping_rounds=25 ):
+            early_stopping_rounds=25):
         self.model = XGBClassifier(
             n_estimators=n_estimators,        
             max_depth=max_depth,             
