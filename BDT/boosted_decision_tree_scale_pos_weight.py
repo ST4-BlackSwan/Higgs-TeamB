@@ -2,9 +2,8 @@ import numpy as np
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 
-class BoostedDecisionTreeHyperParameters:
-    def __init__(self):
-        self.model = XGBClassifier(
+class BoostedDecisionTreeScalePosWeight:
+    def __init__(self,
             n_estimators=1500,       
             max_depth=6,             
             learning_rate=0.02,
@@ -14,7 +13,17 @@ class BoostedDecisionTreeHyperParameters:
             gamma=0.15,
             tree_method='hist',      
             random_state=31415,
-            early_stopping_rounds=25 
+            early_stopping_rounds=25):
+        self.model = XGBClassifier(
+            n_estimators=n_estimators,        
+            max_depth=max_depth,             
+            learning_rate=learning_rate,
+            subsample=subsample,           
+            colsample_bytree=colsample_bytree,    
+            min_child_weight=min_child_weight,      
+            tree_method=tree_method,      
+            random_state=random_state,
+            early_stopping_rounds=early_stopping_rounds
         )
 
     def fit(self, train_data, labels, weights=None):
