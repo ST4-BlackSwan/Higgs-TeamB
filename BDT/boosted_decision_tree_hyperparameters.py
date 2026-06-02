@@ -18,7 +18,7 @@ class BoostedDecisionTreeHyperParameters:
             subsample=subsample,           
             colsample_bytree=colsample_bytree,    
             min_child_weight=min_child_weight,      
-            tree_method='hist',      
+            tree_method=tree_method,      
             random_state=random_state,
             early_stopping_rounds=early_stopping_rounds
         )
