@@ -7,8 +7,7 @@ from sklearn.model_selection import train_test_split
 
 from boosted_decision_tree import BoostedDecisionTree
 
-data = download_dataset(
-    "blackSwan_data")
+data = download_dataset("blackSwan_data")
 data.load_train_set()
 data_set = data.get_train_set()
 
@@ -17,12 +16,7 @@ labels = data_set["labels"]
 weights = data_set["weights"]
 
 X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
-    train_data,
-    labels,
-    weights,
-    test_size=0.3,
-    random_state=42,
-    stratify=labels
+    train_data, labels, weights, test_size=0.3, random_state=42, stratify=labels
 )
 
 thresholds = np.linspace(0, 1, 200)
@@ -62,7 +56,9 @@ print("Best Poisson significance:", best_significance)
 
 plt.figure(figsize=(8, 5))
 plt.plot(thresholds, significances, label="Poisson significance")
-plt.axvline(best_threshold, linestyle="--", label=f"Best threshold = {best_threshold:.3f}")
+plt.axvline(
+    best_threshold, linestyle="--", label=f"Best threshold = {best_threshold:.3f}"
+)
 plt.xlabel("BDT score threshold")
 plt.ylabel("Significance Z")
 plt.title("Poisson significance curve")
