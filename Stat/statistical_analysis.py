@@ -1,5 +1,7 @@
 import numpy as np
 from HiggsML.systematics import systematics
+from iminuit import Minuit
+from scipy.stats import poisson
 
 """
 Task 1a : Counting Estimator
@@ -69,4 +71,32 @@ def compute_mu(score, weight, saved_info):
         "del_mu_tot": del_mu_tot,
     }
 
+def compute_mub(score, weight, saved_info):
+    
+    beta  = saved_info["beta"]
+    gamma = saved_info["gamma"]
+    
+    score = score.flatten() > 0.5
+    score = score.astype(int)
+    n_obs= np.sum(score * weight)
 
+    def NLL(mu):
+        n_pred = mu * gamma + beta
+        return -2 * poisson.logpmf(n_obs, n_pred)
+    
+    m = Minuit(NLL, mu=1.0)
+    m.limits["mu"] = (0, None)
+    m.migrad()
+    
+    
+    mu_hat      = m.values["mu"]
+    del_mu_stat = m.errors["mu"]
+    del_mu_sys = abs(0.0 * mu)
+    del_mu_tot = np.sqrt(del_mu_stat**2 + del_mu_sys**2)
+
+    return {
+        "mu_hat": mu_hat,
+        "del_mu_stat": del_mu_stat,
+        "del_mu_sys": del_mu_sys,
+        "del_mu_tot": del_mu_tot,
+    }
