@@ -26,7 +26,7 @@ X_train, X_val, y_train, y_val, w_train, w_val = train_test_split(
 # Objective function for Optuna optimization loop
 def objective(trial):
     # Hyperparameter search space boundaries
-    max_depth = trial.suggest_int('max_depth', 3, 9, step=2)
+    max_depth = trial.suggest_int('max_depth', 3, 13, step=2)
     learning_rate = trial.suggest_float('learning_rate', 0.01, 0.1, log=True)
     subsample = trial.suggest_float('subsample', 0.6, 1.0, step=0.2)
     colsample_bytree = trial.suggest_float('colsample_bytree', 0.6, 1.0, step=0.2)
@@ -55,7 +55,7 @@ def objective(trial):
     return score_auc
 
 # Run Bayesian optimization
-NB_ITERATIONS = 50
+NB_ITERATIONS = 15
 print(f"\nDébut de l'optimisation Bayésienne avec Optuna ({NB_ITERATIONS} itérations)...")
 
 study = optuna.create_study(direction="maximize")

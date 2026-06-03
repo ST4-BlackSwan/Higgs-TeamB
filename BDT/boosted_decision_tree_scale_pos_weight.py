@@ -11,7 +11,8 @@ class BoostedDecisionTreeScalePosWeight:
             colsample_bytree=0.8,    
             min_child_weight=6,      
             gamma=0,
-            tree_method='hist',      
+            tree_method='hist',
+            device=None,      
             random_state=31415,
             early_stopping_rounds=25,
             scale_factor=1.0):
@@ -26,7 +27,8 @@ class BoostedDecisionTreeScalePosWeight:
             colsample_bytree=colsample_bytree,    
             min_child_weight=min_child_weight,
             gamma=gamma,      
-            tree_method=tree_method,      
+            tree_method=tree_method,
+            device=device,      
             random_state=random_state,
             early_stopping_rounds=early_stopping_rounds
         )
