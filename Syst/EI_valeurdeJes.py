@@ -1,5 +1,15 @@
 # Pour tracer l'histogramme des scores pour différentes valeurs de JEs
+from HiggsML.systematics import systematics
+from HiggsML.datasets import download_dataset
+from HiggsML.ingestion import Ingestion
+from model import Model 
+import numpy as np
+data_normal = download_dataset("blackSwan_data")  # votre dataset de base
 
+data_normal.load_train_set()
+data_train = data_normal.get_train_set()
+ingestion = Ingestion(data_train)
+ingestion.init_submission(Model,"BDT")
 L = np.linspace(0.97, 1.03, 5)
 for jesval in L:
     data_with_JES = systematics(data_train, jes=jesval)  # variation de jes
