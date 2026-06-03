@@ -10,7 +10,7 @@ class NeuralNetwork:
     Optimized for the HiggsML dataset with batch acceleration.
     """
 
-    def _init_(self, train_data):
+    def __init__(self, train_data):
         self.model = Sequential()
 
         # Nombre de variables d'entrée (features physiques)
@@ -61,4 +61,6 @@ class NeuralNetwork:
         test_data = self.scaler.transform(test_data)
 
         # Prédiction accélérée également par lot
-        return self.model.predict(test_data, batch_size=2048).flatten().ravel()
+        return (
+            self.model.predict(test_data, batch_size=2048).flatten().ravel()
+        )
