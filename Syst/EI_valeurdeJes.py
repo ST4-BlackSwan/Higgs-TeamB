@@ -396,7 +396,7 @@ def varpar(par, parnormal, listevalpar, intervalscore):
 # à ajouter au bout du COLAB
 
 # jes
-varpar('jes', 1, [0.97, 1.03], [0.7, 0.8]))
+varpar('jes', 1, [0.97, 1.03], [0.7, 0.8])
 varpar('jes', 1, [0.97, 1.03], [0.8, 0.9])
 varpar('jes', 1, [0.97, 1.03], [0.9, 1.0])
 
