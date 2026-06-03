@@ -278,3 +278,76 @@ plt.plot(L,liste_delta_s,marker='o')
 plt.show()
 plt.plot(L,liste_delta_b,marker='o')
 plt.show()
+
+
+
+#Programme pour faire varier le parmètre d'intérêt argument par de la fonction, mettre par exemple 'jes', mettre ensuite la valeur de ce paramètre sans erreur systématique
+#Puis mettre la liste de valeur du paramètre que l'on veut tester, puis la plage de score accepté
+#Exemple d'input : varpar('jes',1,[0.97,1.03],[0.9,1])
+
+def varpar(par,parnormal,listevalpar,intervalscore):
+  c=intervalscore[0]
+  d=intervalscore[1]
+  kwargs = {par: parnormal}
+  data_with_PAR = systematics(
+    data_train,
+    **kwargs # variation du paramètre
+  )
+
+  # Get the feature columns (assuming they are all columns except 'weights', 'labels', 'detailed_labels')
+  non_feature_cols = ['weights', 'labels', 'detailed_labels']
+  feature_cols = [col for col in data_with_PAR.columns if col not in non_feature_cols]
+
+    # Get raw prediction scores for data_with_JES from the BDT model (ingestion.model.model.predict)
+    # Assuming predict returns probabilities/scores directly.
+  raw_scores_par = ingestion.model.model.predict(data_with_PAR[feature_cols])
+
+  signal_scores_par = raw_scores_par[data_with_PAR['labels'] == 1]
+  background_scores_par = raw_scores_par[data_with_PAR['labels'] == 0]
+
+
+  s0 = 0
+  b0 = 0 
+  for i in range (len(raw_scores_par)) :
+      if data_with_PAR['labels'][i] == 1 and raw_scores_par[i] > c and raw_scores_par[i] <d :
+        s0=s0+data_with_PAR['weights'][i]
+      if data_with_PAR['labels'][i] == 0 and raw_scores_par[i] > c and raw_scores_par[i] <d :
+        b0=b0+data_with_PAR['weights'][i]
+
+  liste_delta_s =[]
+  liste_delta_b =[]
+  L = listevalpar
+  for parval in L:
+    kwargs = {par: parval}
+    data_with_PAR = systematics(
+    data_train,
+    **kwargs # variation du paramètre
+    )
+
+    # Get the feature columns (assuming they are all columns except 'weights', 'labels', 'detailed_labels')
+    non_feature_cols = ['weights', 'labels', 'detailed_labels']
+    feature_cols = [col for col in data_with_PAR.columns if col not in non_feature_cols]
+
+    # Get raw prediction scores for data_with_JES from the BDT model (ingestion.model.model.predict)
+    # Assuming predict returns probabilities/scores directly.
+    raw_scores_par = ingestion.model.model.predict(data_with_PAR[feature_cols])
+
+    signal_scores_tes = raw_scores_par[data_with_PAR['labels'] == 1]
+    background_scores_tes = raw_scores_par[data_with_PAR['labels'] == 0]
+
+
+    s = 0
+    b = 0 
+    for i in range (len(raw_scores_par)) :
+      if data_with_PAR['labels'][i] == 1 and raw_scores_par[i] > c and raw_scores_par[i] <d :
+        s=s+data_with_PAR['weights'][i]
+      if data_with_PAR['labels'][i] == 0 and raw_scores_par[i] > c and raw_scores_par[i] <d :
+        b=b+data_with_PAR['weights'][i]
+    liste_delta_s.append(s-s0)
+    liste_delta_b.append(b-b0)
+
+  plt.plot(L,liste_delta_s,marker='o')
+  plt.show()
+  plt.plot(L,liste_delta_b,marker='o')
+  plt.show()
+  return liste_delta_s,liste_delta_b
