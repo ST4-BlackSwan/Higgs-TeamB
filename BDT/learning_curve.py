@@ -10,10 +10,6 @@ from HiggsML.datasets import download_dataset
 from boosted_decision_tree_scale_pos_weight import BoostedDecisionTreeScalePosWeight
 
 
-# =========================
-# Load dataset
-# =========================
-
 print("Loading dataset...", flush=True)
 
 data = download_dataset("blackSwan_data")
@@ -23,9 +19,6 @@ data_set = data.get_train_set()
 print("Dataset loaded:", data_set.shape, flush=True)
 
 
-# =========================
-# Prepare data
-# =========================
 
 train_data = data_set.drop(columns=["labels", "weights", "detailed_labels"])
 labels = data_set["labels"]
@@ -33,7 +26,7 @@ weights = data_set["weights"]
 
 
 # On garde une version complète du train set.
-# Important : on ne modifiera jamais ces variables dans la boucle.
+
 X_train_full, X_test, y_train_full, y_test, w_train_full, w_test = train_test_split(
     train_data,
     labels,
@@ -44,9 +37,6 @@ X_train_full, X_test, y_train_full, y_test, w_train_full, w_test = train_test_sp
 )
 
 
-# =========================
-# Learning curve
-# =========================
 
 train_fractions = np.linspace(0.1, 1.0, 5)
 
@@ -103,9 +93,7 @@ for frac in train_fractions:
     print()
 
 
-# =========================
-# Plot
-# =========================
+
 
 os.makedirs("figures", exist_ok=True)
 
