@@ -396,21 +396,21 @@ def varpar(par, parnormal, listevalpar, intervalscore):
 # à ajouter au bout du COLAB
 
 # jes
-varpar('jes', 1, [0.97, 1.03], [0.7, 0.8])
-varpar('jes', 1, [0.97, 1.03], [0.8, 0.9])
-varpar('jes', 1, [0.97, 1.03], [0.9, 1.0])
+varpar('jes', 1, np.linspace(0.97, 1.03, 100), [0.7, 0.8])
+varpar('jes', 1, np.linspace(0.97, 1.03, 100), [0.8, 0.9])
+varpar('jes', 1, np.linspace(0.97, 1.03, 100), [0.9, 1.0])
 
 # tes
-varpar('tes', 1, [0.97, 1.03], [0.7, 0.8])
-varpar('tes', 1, [0.97, 1.03], [0.8, 0.9])
-varpar('tes', 1, [0.97, 1.03], [0.1, 1.0])
+varpar('tes', 1, np.linspace(0.97, 1.03, 100), [0.7, 0.8])
+varpar('tes', 1, np.linspace(0.97, 1.03, 100), [0.8, 0.9])
+varpar('tes', 1, np.linspace(0.97, 1.03, 100), [0.9, 1.0])
 
 # bkg_norm
-varpar('bkg_norm', 1, [0.95, 1.05], [0.7, 0.8])
-varpar('bkg_norm', 1, [0.95, 1.05], [0.8, 0.9])
-varpar('bkg_norm', 1, [0.95, 1.05], [0.9, 1.0])
+varpar('bkg_norm', 1, np.linspace(0.95, 1.05, 100), [0.7, 0.8])
+varpar('bkg_norm', 1, np.linspace(0.95, 1.05, 100), [0.8, 0.9])
+varpar('bkg_norm', 1, np.linspace(0.95, 1.05, 100), [0.9, 1.0])
 
 # soft_met (unité inconnue, on suppose que c'est en GeV)
-varpar('soft_met', 0, [-3.0, 3.0], [0.7, 0.8])
-varpar('soft_met', 0, [-3.0, 3.0], [0.8, 0.9])
-varpar('soft_met', 0, [-3.0, 3.0], [0.9, 1.0])
+varpar('soft_met', 0, np.linspace(-3.0, 3.0, 100), [0.7, 0.8])
+varpar('soft_met', 0, np.linspace(-3.0, 3.0, 100), [0.8, 0.9])
+varpar('soft_met', 0, np.linspace(-3.0, 3.0, 100), [0.9, 1.0])
