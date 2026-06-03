@@ -46,9 +46,9 @@ for i in range(1, NB_ITERATIONS + 1):
     params_choisis = {k: np.random.choice(v) for k, v in dictionnaire_parametres.items()}
     
     bdt_hpo = BoostedDecisionTreeHyperParameters(
-        n_estimators=1000,        # Fixé, géré par l'early stopping interne
+        n_estimators=1000,        # Fixé cappé par l'early stopping interne
         tree_method='hist',       # Fixed (pour optimiser la vitesse de calcul CPU)
-        device='cpu',             # Exécution sur CPU pour préserver la VRAM
+        device='cpu',             # Exécution sur CPU 
         random_state=31415,       # Code fixé pour la reproductibilité du hasard
         early_stopping_rounds=15, # Fixé pour couper l'arbre dès qu'il overfitte X_val
         max_depth=int(params_choisis['max_depth']),
