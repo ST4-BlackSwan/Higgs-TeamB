@@ -18,7 +18,7 @@ labels = data_set["labels"].values
 weights = data_set["weights"].values
 
 # --- SÉPARATION EN DEUX BASES DE DONNÉES DISTINCTES ---
-# X_train : base d'entraînement (80%) | X_val : base de validation pour guider Optuna (20%)
+# X_train : base d'entraînement (80%) | X_val : base de validation pour tester le BDT (20%)
 X_train, X_val, y_train, y_val, w_train, w_val = train_test_split(
     train_data, labels, weights, test_size=0.2, random_state=31415
 )
@@ -55,7 +55,7 @@ def objective(trial):
     return score_auc
 
 # Run Bayesian optimization
-NB_ITERATIONS = 15
+NB_ITERATIONS = 50
 print(f"\nDébut de l'optimisation Bayésienne avec Optuna ({NB_ITERATIONS} itérations)...")
 
 study = optuna.create_study(direction="maximize")
