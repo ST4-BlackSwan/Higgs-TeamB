@@ -24,7 +24,7 @@ X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
     stratify=labels
 )
 
-bdt = BoostedDecisionTreeScalePosWeight(X_train)
+bdt = BoostedDecisionTreeScalePosWeight()
 bdt.fit(X_train, y_train, w_train)
 
 predictions = bdt.predict(X_test)
