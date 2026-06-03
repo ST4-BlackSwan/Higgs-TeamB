@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler
 
 print("ca marche")
 
+
 class NeuralNetwork:
     """
     This Dummy class implements a neural network classifier
@@ -20,7 +21,7 @@ class NeuralNetwork:
         # 1. Couche d'entrée et première couche cachée (Large)
         self.model.add(Dense(256, input_dim=n_dim, activation="relu"))
         self.model.add(Dropout(0.2))
-        
+
         self.model.add(Dense(128, input_dim=n_dim, activation="relu"))
         self.model.add(Dropout(0.2))
 
