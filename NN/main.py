@@ -1,7 +1,8 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 from sklearn.preprocessing import StandardScaler
 
+print("ca marche")
 
 class NeuralNetwork:
     """
@@ -16,8 +17,22 @@ class NeuralNetwork:
 
         n_dim = train_data.shape[1]
 
-        self.model.add(Dense(10, input_dim=n_dim, activation="relu"))
-        self.model.add(Dense(10, activation="relu"))
+        # 1. Couche d'entrée et première couche cachée (Large)
+        self.model.add(Dense(256, input_dim=n_dim, activation="relu"))
+        self.model.add(Dropout(0.2))
+        
+        self.model.add(Dense(128, input_dim=n_dim, activation="relu"))
+        self.model.add(Dropout(0.2))
+
+        # 2. Deuxième couche (Moyenne)
+        self.model.add(Dense(64, activation="relu"))
+        self.model.add(Dropout(0.2))
+
+        # 3. Troisième couche (Petite)
+        self.model.add(Dense(32, activation="relu"))
+        # Pas de dropout sur la dernière couche cachée, on veut qu'elle donne tout
+
+        # 4. Couche de sortie (1 seul neurone)
         self.model.add(Dense(1, activation="sigmoid"))
 
         self.model.compile(
