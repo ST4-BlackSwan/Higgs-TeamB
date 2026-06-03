@@ -8,7 +8,8 @@ class BoostedDecisionTreeHyperParameters:
             subsample=0.8,           
             colsample_bytree=0.8,    
             min_child_weight=5,      
-            tree_method='hist',      
+            tree_method='hist',
+            device= None,      
             random_state=31415,
             early_stopping_rounds=15):
         self.model = XGBClassifier(
@@ -18,7 +19,8 @@ class BoostedDecisionTreeHyperParameters:
             subsample=subsample,           
             colsample_bytree=colsample_bytree,    
             min_child_weight=min_child_weight,      
-            tree_method=tree_method,      
+            tree_method=tree_method,
+            device=device,      
             random_state=random_state,
             early_stopping_rounds=early_stopping_rounds
         )
