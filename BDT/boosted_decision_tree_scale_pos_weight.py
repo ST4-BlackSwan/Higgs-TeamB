@@ -14,7 +14,7 @@ class BoostedDecisionTreeScalePosWeight:
             tree_method='hist',      
             random_state=31415,
             early_stopping_rounds=25,
-            scale_factor=100.0):
+            scale_factor=1.0):
         
         self.scale_factor = scale_factor
         
@@ -32,10 +32,10 @@ class BoostedDecisionTreeScalePosWeight:
         )
 
     def fit(self, train_data, labels, weights=None):
-        num_background = np.sum(labels == 0)
-        num_signal = np.sum(labels == 1)
-        ratio = (num_background / num_signal)*self.scale_factor
-        
+        sum_w_background = np.sum(weights[labels == 0])
+        sum_w_signal = np.sum(weights[labels == 1])
+        ratio = (sum_w_background / sum_w_signal) * self.scale_factor
+
         self.model.set_params(scale_pos_weight=ratio)
         
         print(f"[INFO] scale_pos_weight configuré à {ratio:.2f}")
