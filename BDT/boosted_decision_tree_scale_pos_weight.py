@@ -10,27 +10,32 @@ class BoostedDecisionTreeScalePosWeight:
             subsample=0.8,           
             colsample_bytree=0.8,    
             min_child_weight=6,      
-            gamma=0.15,
+            gamma=0,
             tree_method='hist',      
             random_state=31415,
-            early_stopping_rounds=25):
+            early_stopping_rounds=25,
+            scale_factor=1.0):
+        
+        self.scale_factor = scale_factor
+        
         self.model = XGBClassifier(
             n_estimators=n_estimators,        
             max_depth=max_depth,             
             learning_rate=learning_rate,
             subsample=subsample,           
             colsample_bytree=colsample_bytree,    
-            min_child_weight=min_child_weight,      
+            min_child_weight=min_child_weight,
+            gamma=gamma,      
             tree_method=tree_method,      
             random_state=random_state,
             early_stopping_rounds=early_stopping_rounds
         )
 
     def fit(self, train_data, labels, weights=None):
-        num_background = np.sum(labels == 0)
-        num_signal = np.sum(labels == 1)
-        ratio = num_background / num_signal
-        
+        sum_w_background = np.sum(weights[labels == 0])
+        sum_w_signal = np.sum(weights[labels == 1])
+        ratio = (sum_w_background / sum_w_signal) * self.scale_factor
+
         self.model.set_params(scale_pos_weight=ratio)
         
         print(f"[INFO] scale_pos_weight configuré à {ratio:.2f}")
