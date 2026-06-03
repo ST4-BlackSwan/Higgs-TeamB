@@ -35,7 +35,7 @@ def objective(trial):
     bdt_hpo = BoostedDecisionTreeScalePosWeight(
         n_estimators=1000,        # Fixed (managed by early stopping)
         tree_method='hist',       # Fixed (for computing speed)
-        device='cuda',            # Assure-toi que ta classe gère bien cet argument pour le GPU
+        device='cuda',            # to compute on the GPU
         random_state=31415,       # Fixed (for reproducibility)
         early_stopping_rounds=15, # Fixed (to prevent overfitting)
         max_depth=max_depth,
@@ -55,7 +55,7 @@ def objective(trial):
     return score_auc
 
 # Run Bayesian optimization
-NB_ITERATIONS = 15
+NB_ITERATIONS = 50
 print(f"\nDébut de l'optimisation Bayésienne avec Optuna ({NB_ITERATIONS} itérations)...")
 
 study = optuna.create_study(direction="maximize")
