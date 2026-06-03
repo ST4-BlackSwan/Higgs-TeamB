@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 from HiggsML.datasets import download_dataset
 from sklearn.model_selection import train_test_split
 
-from boosted_decision_tree_hyperparameters import BoostedDecisionTreeHyperParameters
-
+from boosted_decision_tree_scale_pos_weight import BoostedDecisionTreeScalePosWeight
 data = download_dataset("blackSwan_data")
 data.load_train_set()
 data_set = data.get_train_set()
@@ -26,7 +25,7 @@ X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
 
 # here we use the hyperparameters found with the bayesian method.
 
-bdt = BoostedDecisionTreeHyperParameters(
+bdt = BoostedDecisionTreeScalePosWeight(
     n_estimators=1000,
     max_depth=9,
     learning_rate=0.08501869815505453,
@@ -42,6 +41,7 @@ bdt.fit(X_train, y_train, w_train)
 
 predictions = bdt.predict(X_test)
 
+np.savetxt("predictions.csv", predictions, delimiter=",", fmt="%d")
 
 thresholds = np.linspace(0, 1, 200)
 
@@ -90,6 +90,8 @@ plt.legend()
 plt.grid()
 plt.tight_layout()
 plt.show()
+
+
 
 
 plt.figure(figsize=(8, 5))
