@@ -1,0 +1,39 @@
+Début de l'optimisation HPO (20 itérations)...
+Itération 1/20 | AUC: 0.8771 | Meilleur AUC historique: 0.8771
+Itération 2/20 | AUC: 0.8789 | Meilleur AUC historique: 0.8789
+Itération 3/20 | AUC: 0.8776 | Meilleur AUC historique: 0.8789
+Itération 4/20 | AUC: 0.8820 | Meilleur AUC historique: 0.8820
+Itération 5/20 | AUC: 0.8714 | Meilleur AUC historique: 0.8820
+Itération 6/20 | AUC: 0.8782 | Meilleur AUC historique: 0.8820
+Itération 7/20 | AUC: 0.8752 | Meilleur AUC historique: 0.8820
+Itération 8/20 | AUC: 0.8803 | Meilleur AUC historique: 0.8820
+Itération 9/20 | AUC: 0.8719 | Meilleur AUC historique: 0.8820
+Itération 10/20 | AUC: 0.8800 | Meilleur AUC historique: 0.8820
+Itération 11/20 | AUC: 0.8734 | Meilleur AUC historique: 0.8820
+Itération 12/20 | AUC: 0.8767 | Meilleur AUC historique: 0.8820
+Itération 13/20 | AUC: 0.8750 | Meilleur AUC historique: 0.8820
+Itération 14/20 | AUC: 0.8822 | Meilleur AUC historique: 0.8822
+Itération 15/20 | AUC: 0.8721 | Meilleur AUC historique: 0.8822
+Itération 16/20 | AUC: 0.8756 | Meilleur AUC historique: 0.8822
+Itération 17/20 | AUC: 0.8745 | Meilleur AUC historique: 0.8822
+Itération 18/20 | AUC: 0.8730 | Meilleur AUC historique: 0.8822
+Itération 19/20 | AUC: 0.8765 | Meilleur AUC historique: 0.8822
+Itération 20/20 | AUC: 0.8794 | Meilleur AUC historique: 0.8822
+
+==================================================
+FIN DE L'OPTIMISATION
+Meilleur score AUC mémorisé : 0.88216
+Meilleurs hyperparamètres correspondants :
+  - max_depth: 9
+  - learning_rate: 0.02
+  - subsample: 0.6
+  - colsample_bytree: 0.6
+  - min_child_weight: 1
+  
+Fixed hyperparameter values for the XGBoost model configuration
+n_estimators = 1000        # Fixed (managed by early stopping)
+tree_method = 'hist'       # Fixed (for computing speed)
+random_state = 31415       # Fixed (for reproducibility)
+early_stopping_rounds = 15 # Fixed (to prevent overfitting)
+
+
