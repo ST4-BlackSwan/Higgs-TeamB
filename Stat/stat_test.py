@@ -46,8 +46,8 @@ def test3():
     score_test  = np.concatenate([np.ones(int(0.5*S)), np.zeros(B)])
     weight_test = np.ones(int(0.5*S) + B)
     print("TEST 3 - Attendu mu≈0.5")
-    print(f"Counting : mu={compute_mu(score_test, weight_test, saved)['mu_hat']:.3f}")
-    print(f"Likelihood : mu={compute_mub(score_test, weight_test, saved)['mu_hat']:.3f}")
+    print(f"Counting : mu={compute_mu(score_test, weight_test, saved)['mu_hat']:.3f} ± {compute_mu(score_test, weight_test, saved)['del_mu_stat']:.3f}")
+    print(f"Likelihood : mu={compute_mub(score_test, weight_test, saved)['mu_hat']:.3f} ± {compute_mub(score_test, weight_test, saved)['del_mu_stat']:.3f}")
 
 def test4():
     """ mu=1.5 imposé : on augmente le signal """
@@ -59,5 +59,5 @@ def test4():
     score_test  = np.concatenate([np.ones(int(1.5*S)), np.zeros(B)])
     weight_test = np.ones(int(1.5*S) + B)
     print("TEST 4 - Attendu mu≈1.5")
-    print(f"Counting : mu={compute_mu(score_test, weight_test, saved)['mu_hat']:.3f}")
-    print(f"Likelihood : mu={compute_mub(score_test, weight_test, saved)['mu_hat']:.3f}")
+    print(f"Counting : mu={compute_mu(score_test, weight_test, saved)['mu_hat']:.3f} ± {compute_mu(score_test, weight_test, saved)['del_mu_stat']:.3f}")
+    print(f"Likelihood : mu={compute_mub(score_test, weight_test, saved)['mu_hat']:.3f} ± {compute_mub(score_test, weight_test, saved)['del_mu_stat']:.3f}")
