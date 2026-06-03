@@ -1,0 +1,288 @@
+"""
+systematic_analysis.py  --  Working Group SYST
+================================================
+
+Objectif de ce module
+----------------------
+Pour chaque parametre de nuisance (TES, JES, soft MET, ...), on veut savoir
+COMMENT la distribution du score du classifieur se deforme quand on bouge la
+nuisance, puis MODELISER cette deformation bin par bin. C'est exactement la
+"courbe de calibration" de l'article FAIR Universe (Figure 2b, "bin 24").
+
+On fournit, pour chaque bin i du score, deux fonctions:
+    S_i(nu)  = rendement (yield) signal     attendu dans le bin i
+    B_i(nu)  = rendement (yield) background  attendu dans le bin i
+Le groupe STAT s'en sert ensuite dans la likelihood binnee:
+    expected_i(mu, nu) = mu * S_i(nu) + B_i(nu)
+et profile sur (mu, nu).
+
+Pourquoi un polynome en (nu - 1) ?
+----------------------------------
+- nu = 1 (ou 0 pour soft MET) = point nominal, donc le coefficient d'ordre 0
+  du polynome est directement le rendement nominal du bin.
+- TES/JES deforment la FORME du score (ce ne sont PAS de simples facteurs de
+  normalisation), un degre 1-2 capture bien la variation locale du contenu.
+
+Le module tourne en autonomie en mode "toy" :  `python systematic_analysis.py`
+(aucun classifieur ni HiggsML requis pour la demo). Pour le vrai pipeline,
+passe simplement le vrai `model` et le vrai `holdout_set`.
+"""
+
+import numpy as np
+
+# --------------------------------------------------------------------------- #
+#  Configuration                                                              #
+# --------------------------------------------------------------------------- #
+N_BINS = 25
+SCORE_RANGE = (0.0, 1.0)
+
+# Plages de scan des nuisances.
+# TES/JES : multiplicatifs, centres sur 1.  La slide conseille +-3% (0.97-1.03).
+TES_SCAN = np.linspace(0.97, 1.03, 7)
+JES_SCAN = np.linspace(0.97, 1.03, 7)
+# soft MET : additif, en GeV, a partir de 0.  Conseil slide : ~3 GeV.
+SOFTMET_SCAN = np.linspace(0.0, 5.0, 6)
+
+FIT_DEGREE = 2  # degre du polynome par bin
+
+
+# --------------------------------------------------------------------------- #
+#  Objet renvoye par les fitters                                              #
+# --------------------------------------------------------------------------- #
+class HistoMorph:
+    """
+    Encapsule la dependance des templates (signal et background) vis-a-vis
+    d'une nuisance, via un polynome par bin.
+
+    Attributs
+    ---------
+    name      : nom de la nuisance ("tes", "jes", ...)
+    nominal   : valeur nominale (1.0 pour TES/JES, 0.0 pour soft MET)
+    edges     : bords des bins du score
+    coeff_S   : (n_bins, deg+1) coeffs polynomiaux du signal     en (nu - nominal)
+    coeff_B   : (n_bins, deg+1) coeffs polynomiaux du background en (nu - nominal)
+
+    Usage
+    -----
+    morph = tes_fitter(model, holdout_set)
+    S_bins = morph.signal(1.02)      # yields signal par bin pour TES = 1.02
+    B_bins = morph.background(0.99)  # yields background par bin pour TES = 0.99
+    """
+
+    def __init__(self, name, nominal, edges, coeff_S, coeff_B):
+        self.name = name
+        self.nominal = nominal
+        self.edges = edges
+        self.coeff_S = coeff_S
+        self.coeff_B = coeff_B
+
+    def signal(self, nu):
+        # polyval(x, c) avec c de forme (deg+1, n_bins) -> renvoie (n_bins,)
+        x = nu - self.nominal
+        return np.clip(np.polynomial.polynomial.polyval(x, self.coeff_S.T), 0.0, None)
+
+    def background(self, nu):
+        x = nu - self.nominal
+        return np.clip(np.polynomial.polynomial.polyval(x, self.coeff_B.T), 0.0, None)
+
+    # Compatibilite ascendante avec la signature du squelette fit_function(array, nu):
+    # on "morph" un histogramme total fourni par le ratio background nominal -> nu.
+    def __call__(self, array, nu):
+        ref = self.background(self.nominal)
+        ratio = np.divide(self.background(nu), ref,
+                          out=np.ones_like(ref), where=ref > 0)
+        return np.asarray(array) * ratio
+
+
+# --------------------------------------------------------------------------- #
+#  Coeur : scan des histogrammes + fit par bin                                #
+# --------------------------------------------------------------------------- #
+def _extract(syst_set, fallback):
+    """Recupere data/weights/labels du set systematique (ou du set d'origine)."""
+    data = syst_set["data"]
+    weights = np.asarray(syst_set.get("weights", fallback["weights"])).flatten()
+    labels = np.asarray(syst_set.get("labels", fallback["labels"])).flatten()
+    return data, weights, labels
+
+
+def _weighted_hist(score, weight, mask):
+    counts, edges = np.histogram(
+        score[mask], bins=N_BINS, range=SCORE_RANGE, weights=weight[mask]
+    )
+    return counts, edges
+
+
+def _scan_histograms(model, data_set, name, scan_values, systematics_fn):
+    """
+    Pour chaque valeur de la nuisance:
+      1. applique la systematique
+      2. predit le score
+      3. histogramme signal et background (ponderes)
+    Renvoie edges, hist_S (n_scan, n_bins), hist_B (n_scan, n_bins).
+    """
+    hist_S = np.zeros((len(scan_values), N_BINS))
+    hist_B = np.zeros((len(scan_values), N_BINS))
+    edges = None
+    for j, v in enumerate(scan_values):
+        syst_set = systematics_fn(data_set, **{name: v})
+        data, weights, labels = _extract(syst_set, data_set)
+        score = np.asarray(model.predict(data)).flatten()
+        cS, edges = _weighted_hist(score, weights, labels == 1)
+        cB, _ = _weighted_hist(score, weights, labels == 0)
+        hist_S[j] = cS
+        hist_B[j] = cB
+    return edges, hist_S, hist_B
+
+
+def _fit_bins(scan_values, nominal, hist, deg=FIT_DEGREE):
+    """Ajuste, pour chaque bin, le rendement en fonction de (nu - nominal)."""
+    n_bins = hist.shape[1]
+    coeffs = np.zeros((n_bins, deg + 1))
+    x = scan_values - nominal
+    # degre limite par le nombre de points de scan
+    deg_eff = min(deg, len(scan_values) - 1)
+    for i in range(n_bins):
+        c = np.polynomial.polynomial.polyfit(x, hist[:, i], deg_eff)
+        coeffs[i, : len(c)] = c
+    return coeffs
+
+
+def nuisance_fitter(model, data_set, name, scan_values, nominal,
+                    systematics_fn=None):
+    """
+    Fitter generique. Renvoie un HistoMorph pour la nuisance `name`.
+
+    systematics_fn : fonction (data_set, **{name: value}) -> set systematique.
+                     Par defaut, HiggsML.systematics (vrai pipeline).
+                     En mode toy, on injecte une fausse fonction.
+    """
+    if systematics_fn is None:
+        from HiggsML.systematics import systematics as systematics_fn  # noqa
+    edges, hist_S, hist_B = _scan_histograms(
+        model, data_set, name, scan_values, systematics_fn
+    )
+    coeff_S = _fit_bins(scan_values, nominal, hist_S)
+    coeff_B = _fit_bins(scan_values, nominal, hist_B)
+    return HistoMorph(name, nominal, edges, coeff_S, coeff_B)
+
+
+# --------------------------------------------------------------------------- #
+#  Fitters attendus par statistical_analysis.py                               #
+# --------------------------------------------------------------------------- #
+def tes_fitter(model, train_set, systematics_fn=None):
+    """Task 1+2 pour la Tau Energy Scale."""
+    return nuisance_fitter(model, train_set, "tes", TES_SCAN, 1.0, systematics_fn)
+
+
+def jes_fitter(model, train_set, systematics_fn=None):
+    """Task 1+2 pour la Jet Energy Scale."""
+    return nuisance_fitter(model, train_set, "jes", JES_SCAN, 1.0, systematics_fn)
+
+
+def softmet_fitter(model, train_set, systematics_fn=None):
+    """Extension : soft MET (additif, nominal = 0)."""
+    return nuisance_fitter(model, train_set, "soft_met", SOFTMET_SCAN, 0.0,
+                           systematics_fn)
+
+
+# --------------------------------------------------------------------------- #
+#  Mode TOY : permet de lancer le module sans classifieur ni HiggsML          #
+# --------------------------------------------------------------------------- #
+def _make_toy(n=40000, seed=0):
+    """
+    Toy a deux features:
+      x_had : affecte par TES (sensible au tau hadronique)
+      x_jet : affecte par JES
+    Signal : moyennes plus elevees -> score plus haut.
+    """
+    rng = np.random.default_rng(seed)
+    n_s, n_b = n // 5, n - n // 5  # ~20% signal
+    x_had = np.concatenate([rng.normal(1.3, 0.4, n_s), rng.normal(0.9, 0.4, n_b)])
+    x_jet = np.concatenate([rng.normal(1.2, 0.5, n_s), rng.normal(0.9, 0.5, n_b)])
+    labels = np.concatenate([np.ones(n_s), np.zeros(n_b)]).astype(int)
+    # poids: signal rare (comme le Higgs), background dominant
+    weights = np.where(labels == 1, 0.02, 1.0)
+    data = {"x_had": x_had, "x_jet": x_jet}
+    return {"data": data, "labels": labels, "weights": weights}
+
+
+class _ToyModel:
+    """Classifieur factice: score = sigmoid(combinaison lineaire des features)."""
+
+    @staticmethod
+    def predict(data):
+        z = 1.6 * data["x_had"] + 1.2 * data["x_jet"] - 3.0
+        return 1.0 / (1.0 + np.exp(-z))
+
+
+def _toy_systematics(data_set, tes=1.0, jes=1.0, soft_met=0.0):
+    """
+    Imite HiggsML.systematics sur le toy:
+      TES multiplie x_had, JES multiplie x_jet (cf. Appendix D de l'article),
+      soft_met ajoute un bruit gaussien a x_had (proxy de l'effet sur le MET).
+    Renvoie un set avec data biaisee, poids et labels inchanges.
+    """
+    rng = np.random.default_rng(12345)
+    x_had = data_set["data"]["x_had"] * tes
+    x_jet = data_set["data"]["x_jet"] * jes
+    if soft_met > 0:
+        x_had = x_had + rng.normal(0.0, soft_met * 0.05, size=x_had.shape)
+    return {
+        "data": {"x_had": x_had, "x_jet": x_jet},
+        "labels": data_set["labels"],
+        "weights": data_set["weights"],
+    }
+
+
+def _demo():
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    toy = _make_toy()
+    model = _ToyModel()
+
+    morph_tes = tes_fitter(model, toy, systematics_fn=_toy_systematics)
+    morph_jes = jes_fitter(model, toy, systematics_fn=_toy_systematics)
+
+    print("[OK] tes_fitter -> coeff_S shape:", morph_tes.coeff_S.shape,
+          "| coeff_B shape:", morph_tes.coeff_B.shape)
+    print("[OK] jes_fitter -> coeff_S shape:", morph_jes.coeff_S.shape)
+    # exemple d'utilisation cote STAT :
+    print("    B_i(tes=1.00) somme =", round(morph_tes.background(1.00).sum(), 2))
+    print("    B_i(tes=1.03) somme =", round(morph_tes.background(1.03).sum(), 2))
+    print("    S_i(tes=0.97) somme =", round(morph_tes.signal(0.97).sum(), 4))
+
+    centers = 0.5 * (morph_tes.edges[:-1] + morph_tes.edges[1:])
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+
+    # (a) deformation de l'histogramme background du score avec TES
+    for v in [0.97, 1.0, 1.03]:
+        axes[0].step(centers, morph_tes.background(v), where="mid",
+                     label=f"TES = {v:.2f}")
+    axes[0].set_title("Deformation du score (background) avec TES")
+    axes[0].set_xlabel("score x")
+    axes[0].set_ylabel("yield pondere / bin")
+    axes[0].legend()
+
+    # (b) "courbe bin 24" : contenu d'un bin vs TES + le fit
+    i = 20  # bin proche du signal (score eleve)
+    x = TES_SCAN
+    _, hS, hB = _scan_histograms(model, toy, "tes", TES_SCAN, _toy_systematics)
+    axes[1].plot(x, hB[:, i], "o", label=f"bin {i} (mesure)")
+    grid = np.linspace(TES_SCAN.min(), TES_SCAN.max(), 100)
+    axes[1].plot(grid, [morph_tes.background(g)[i] for g in grid], "-",
+                 label="fit polynomial")
+    axes[1].set_title(f"Contenu du bin {i} vs TES (analogue 'bin 24')")
+    axes[1].set_xlabel("TES")
+    axes[1].set_ylabel("yield pondere")
+    axes[1].legend()
+
+    fig.tight_layout()
+    fig.savefig("syst_demo.png", dpi=120)
+    print("[OK] figure sauvegardee -> syst_demo.png")
+
+
+if __name__ == "__main__":
+    _demo()
