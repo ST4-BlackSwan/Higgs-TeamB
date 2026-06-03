@@ -1,9 +1,10 @@
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
-
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve
 from HiggsML.datasets import download_dataset
+from boosted_decision_tree_scale_pos_weight import BoostedDecisionTreeScalePosWeight
 
-from boosted_decision_tree import BoostedDecisionTree
 
 data = download_dataset(
     "blackSwan_data")
@@ -23,7 +24,7 @@ X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
     stratify=labels
 )
 
-bdt = BoostedDecisionTree(X_train)
+bdt = BoostedDecisionTreeScalePosWeight(X_train)
 bdt.fit(X_train, y_train, w_train)
 
 predictions = bdt.predict(X_test)
@@ -31,3 +32,20 @@ auc = roc_auc_score(y_test, predictions, sample_weight=w_test)
 
 print("AUC =", auc)
 
+fpr, tpr, thresholds = roc_curve(
+    y_test,
+    predictions,
+    sample_weight=w_test
+)
+
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, label=f"BDT ROC curve, AUC = {auc:.3f}")
+plt.plot([0, 1], [0, 1], linestyle="--", label="Random classifier")
+
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC curve")
+plt.legend()
+plt.grid()
+plt.tight_layout()
+plt.show()
