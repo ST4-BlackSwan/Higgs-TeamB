@@ -71,35 +71,45 @@ def load_and_clean_blackswan():
 
 def prepare_datasets(features, target, weights, train_size=0.75, random_seed=31415):
     """
-    Sépare en Train/Test, applique le StandardScaler et normalise les poids.
+    Sépare en Train/Test de manière séquentielle (conforme au framework FAIR Universe),
+    applique le StandardScaler et normalise les poids du Train.
     """
-    # Fixer la seed pour la reproductibilité
     np.random.seed(random_seed)
 
-    # 1. Séparation Train / Test
-    X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
-        features, target, weights, train_size=train_size, random_state=random_seed
-    )
+    # Nombre total de lignes
+    total_rows = len(features)
+    
+    # Calcul de la taille du test set (25% si train_size = 0.75)
+    test_size = int((1 - train_size) * total_rows)
 
-    # conversion en copies explicites pour éviter les SettingWithCopyWarning
-    w_train = w_train.copy()
-    w_test = w_test.copy()
+    # --- DECOUPAGE CONFORME AU PROTOCOLE CERN ---
+    # Le Test set prend STRICTEMENT les premières lignes (indices 0 à test_size)
+    X_test = features.iloc[:test_size].copy()
+    y_test = target.iloc[:test_size].copy()
+    w_test = weights.iloc[:test_size].copy()
 
-    # 2. Standardisation (Moyenne 0, Variance 1)
+    # Le Train set prend le reste des lignes
+    X_train = features.iloc[test_size:].copy()
+    y_train = target.iloc[test_size:].copy()
+    w_train = weights.iloc[test_size:].copy()
+
+    # 2. Standardisation des features (Moyenne 0, Variance 1)
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # 3. Renormalisation des poids (Code d'égalisation du notebook original)
+    # 3. Renormalisation des poids du TRAIN uniquement
+    # On égalise uniquement le Train pour aider le NN à converger
     class_weights_train = [w_train[y_train == 0].sum(), w_train[y_train == 1].sum()]
     max_weight = max(class_weights_train)
 
     for i in range(2):
-        # Égalise la masse du Background (0) et du Signal (1) sur le Train set
         w_train.loc[y_train == i] *= max_weight / class_weights_train[i]
-        # Compense l'effet de l'échantillonnage sur le Test set
-        w_test.loc[y_test == i] *= 1 / (1 - train_size)
 
+    # --- REGLE D'OR POUR LE TEST SET ---
+    # On ne touche ABSOLUMENT PAS aux poids du Test set. 
+    # Ils doivent rester bruts pour préserver les sommes physiques : S ~ 1015 et B ~ 1050370
+    
     return X_train_scaled, X_test_scaled, y_train, y_test, w_train, w_test, scaler
 
 
@@ -143,7 +153,7 @@ if __name__ == "__main__":
 
     print("--- 2. Affichage des distributions (optionnel) ---")
     # Décommentez la ligne ci-dessous si vous voulez voir les plots au lancement du script
-    plot_distributions(features, target, weights)
+    # plot_distributions(features, target, weights)
 
     print("--- 3. Séparation, Scaler et Renormalisation des poids ---")
     X_train, X_test, y_train, y_test, w_train, w_test, scaler = prepare_datasets(
@@ -152,6 +162,4 @@ if __name__ == "__main__":
 
     print("\n[Vérification des Shapes]")
     print(f"Train features: {X_train.shape} | Test features: {X_test.shape}")
-    print(
-        f"Somme des poids Train - Bkg: {w_train[y_train==0].sum():.2f} | Signal: {w_train[y_train==1].sum():.2f}"
-    )
+
