@@ -1,9 +1,10 @@
-from networkx import sigma
 import numpy as np
 from iminuit import Minuit
+from scipy.optimize import minimize_scalar
 from scipy.stats import poisson
-
-
+import données_syst as syst
+import stat_test as stat
+import matplotlib.pyplot as plt
 #################################################
 # BUILD SHAPE TEMPLATES
 #################################################
@@ -91,7 +92,7 @@ def calculate_saved_info_shape(
 # FIT MU USING BINNED SHAPE LIKELIHOOD
 #################################################
 
-def compute_mu_shape(saved_info, theta0, sigma):
+def compute_mu_shape(saved_info,systematic, theta0, sigma):
 
     bins = saved_info["bins"]
 
@@ -111,22 +112,21 @@ def compute_mu_shape(saved_info, theta0, sigma):
     # This follows exactly the project statement.
     # --------------------------------------------------
 
-    def obs(theta):        #ask systematics for the exact function
-        return np.round(
-            S_hist + B_hist
-        )
+    def shifted_templates(theta, systematic):
+        """Return theta-dependent signal and background templates for the current nuisance value."""
+        delta_s = np.array([syst.get_S(i, systematic, theta) for i in range(len(S_hist))], dtype=float)
+        delta_b = np.array([syst.get_B(i, systematic, theta) for i in range(len(B_hist))], dtype=float)
+        s_theta = np.maximum(S_hist + delta_s, 0.0)
+        b_theta = np.maximum(B_hist + delta_b, 0.0)
+        return s_theta, b_theta
 
-    def NLL(mu,theta):
+    def NLL(mu, theta):
+        s_theta, b_theta = shifted_templates(theta, systematic)
 
-        n_pred = mu * S_hist + B_hist
+        n_obs = np.rint(np.maximum(s_theta + b_theta, 0.0)).astype(int)
+        n_pred = np.maximum(mu * s_theta + b_theta, eps)
 
-        n_pred = np.maximum(
-            n_pred,
-            eps
-        )
-        n_obs = obs(theta)
-        
-        return -2.0 * np.sum(poisson.logpmf(n_obs, n_pred)) +np.sum((theta-theta0)**2/sigma**2)
+        return -2.0 * np.sum(poisson.logpmf(n_obs, n_pred)) + (theta - theta0) ** 2 / sigma ** 2
 
     # --------------------------------------------------
     # CHANGE #5
@@ -163,13 +163,39 @@ def compute_mu_shape(saved_info, theta0, sigma):
     m.hesse()
 
     mu_hat = m.values["mu"]
-
+    
     del_mu_stat = m.errors["mu"]
-
+    
+    theta_hat = m.values["theta"]
+    del_theta_stat = m.errors["theta"]
     del_mu_sys = 0.0
 
     del_mu_tot = del_mu_stat
 
+    theta_grid = np.linspace(theta0 - 3 * sigma, theta0 + 3 * sigma, 200)
+
+    def profile_theta(theta_value):
+        result = minimize_scalar(
+            lambda mu_value: NLL(mu_value, theta_value),
+            bounds=(0.0, 5.0),
+            method="bounded",
+        )
+        return result.x, result.fun
+
+    profile_values = np.array([profile_theta(theta_i)[1] for theta_i in theta_grid])
+    profile_min = np.min(profile_values)
+    delta_profile = profile_values - profile_min
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(theta_grid, delta_profile, label="Profiled NLL")
+    plt.axvline(theta_hat, color="red", linestyle="--", label=r"$	heta_{fit}$")
+    plt.axhline(0.0, color="gray", linestyle=":")
+    plt.xlabel("theta")
+    plt.ylabel("$\\Delta(-2\\log L)$")
+    plt.title("Profiled objective vs theta")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
     return {
 
         "mu_hat": mu_hat,
@@ -179,6 +205,8 @@ def compute_mu_shape(saved_info, theta0, sigma):
         "del_mu_sys": del_mu_sys,
 
         "del_mu_tot": del_mu_tot,
+        "theta_hat": theta_hat,
+        "del_theta_stat": del_theta_stat
 
     }
 
@@ -190,8 +218,8 @@ def compute_mu_shape(saved_info, theta0, sigma):
 def evaluate_shape_analysis(
     model,
     holdout_set,
-    number_bins=20,
-    threshold=0.5,
+    number_bins=3,
+    threshold=0.7,
 ):
 
     saved_info = calculate_saved_info_shape(
@@ -202,7 +230,15 @@ def evaluate_shape_analysis(
     )
 
     result = compute_mu_shape(
-        saved_info
+        saved_info,
+        systematic="tes",  # Replace with the desired systematic
+        theta0=1.0,
+        sigma=0.1
     )
-
+    print(f"Estimated mu: {result['mu_hat']}")
+    print(f"Statistical uncertainty on mu: {result['del_mu_stat']}")
+    print(f"Estimated  tes : {result['theta_hat']}")
+    print(f"Statistical uncertainty on  tes : {result['del_theta_stat']}")
     return result
+
+evaluate_shape_analysis(stat.FakeModel(stat.score), stat.holdout)

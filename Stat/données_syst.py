@@ -19,9 +19,9 @@ S_change={"tes":[(0.19699097,0.70884323),(-1.7246513,0.9830055),(-17.686646,16.8
 B_change={"tes":[(-270.76428,308.10718),(-289.75366,372.21924),(-492.30054,598.72754)], "jes":[(-89.5376,67.917725),(-98.22339,125.55737),(-226.47021,255.14648)], "bnorm":[], "smet":[(0,85.43237),(0,68.12305),(0,87.16016)]}
 
 def get_S (bin, systematic,value):
-    return  (S_change["systematic"][bin][1]-S_change["systematic"][bin][0])/(evaluation["systematic"][1]-evaluation["systematic"][0])*(value-evaluation["systematic"][0])+S_change["systematic"][bin][0]
+    return  (S_change[systematic][bin][1]-S_change[systematic][bin][0])/(evaluation[systematic][1]-evaluation[systematic][0])*(value-evaluation[systematic][0])+S_change[systematic][bin][0]
     
     
 def get_B (bin, systematic,value):
-    return  (B_change["systematic"][bin][1]-B_change["systematic"][bin][0])/(evaluation["systematic"][1]-evaluation["systematic"][0])*(value-evaluation["systematic"][0])+B_change["systematic"][bin][0]
+    return  (B_change[systematic][bin][1]-B_change[systematic][bin][0])/(evaluation[systematic][1]-evaluation[systematic][0])*(value-evaluation[systematic][0])+B_change[systematic][bin][0]
     
