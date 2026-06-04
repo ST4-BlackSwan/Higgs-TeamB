@@ -145,6 +145,7 @@ def compute_mu_shape(saved_info,systematic, theta0, sigma):
     # --------------------------------------------------
 
     m.limits["mu"] = (0, None)
+    m.fixed["mu"] = True
     m.limits["theta"] = (theta0 - 3 * sigma, theta0 + 3 * sigma)
     # --------------------------------------------------
     # CHANGE #7
