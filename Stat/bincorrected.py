@@ -182,6 +182,8 @@ def compute_mu_shape(saved_info):
 
         "del_mu_tot": del_mu_tot,
 
+        "NLL_func": NLL
+
     }
 
 
