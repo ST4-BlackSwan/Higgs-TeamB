@@ -61,6 +61,4 @@ class NeuralNetwork:
         test_data = self.scaler.transform(test_data)
 
         # Prédiction accélérée également par lot
-        return (
-            self.model.predict(test_data, batch_size=2048).flatten().ravel()
-        )
+        return self.model.predict(test_data, batch_size=2048).flatten().ravel()
