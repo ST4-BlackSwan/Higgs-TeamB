@@ -183,6 +183,8 @@ def compute_mu_shape(saved_info, theta0, sigma):
         "del_mu_sys": del_mu_sys,
 
         "del_mu_tot": del_mu_tot,
+        
+        "NLL"        : NLL,
 
     }
 
