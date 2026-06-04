@@ -2,19 +2,22 @@ import numpy as np
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
 
+
 class BoostedDecisionTree:
-    def __init__(self,
-                 n_estimators=1500,
-                 max_depth=6,
-                 learning_rate=0.02,
-                 subsample=0.8,
-                 colsample_bytree=0.8,
-                 min_child_weight=6,
-                 gamma=0,
-                 tree_method='hist',
-                 random_state=31415,
-                 early_stopping_rounds=25,
-                 scale_factor=1.0):
+    def __init__(
+        self,
+        n_estimators=1500,
+        max_depth=6,
+        learning_rate=0.02,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        min_child_weight=6,
+        gamma=0,
+        tree_method="hist",
+        random_state=31415,
+        early_stopping_rounds=25,
+        scale_factor=1.0,
+    ):
 
         self.scale_factor = scale_factor
 
@@ -29,7 +32,7 @@ class BoostedDecisionTree:
             gamma=gamma,
             tree_method=tree_method,
             random_state=random_state,
-            early_stopping_rounds=early_stopping_rounds
+            early_stopping_rounds=early_stopping_rounds,
         )
 
     def fit(self, train_data, labels, weights=None):
@@ -49,11 +52,12 @@ class BoostedDecisionTree:
 
         # Training model
         self.model.fit(
-            X_tr, y_tr,
+            X_tr,
+            y_tr,
             sample_weight=w_tr,
             eval_set=[(X_val, y_val)],
             sample_weight_eval_set=[w_val],
-            verbose=False
+            verbose=False,
         )
 
     def predict(self, test_data):
