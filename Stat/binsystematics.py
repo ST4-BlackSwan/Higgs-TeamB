@@ -112,14 +112,18 @@ def compute_mu_shape(saved_info, theta0, sigma):
     # --------------------------------------------------
 
     def obs(theta):        #ask systematics for the exact function
-        return np.round(
-            S_hist + B_hist
-        )
+        
+        d_S = np.array([get_S(i, systematic, theta) for i in range(len(S_hist))])
+        d_B = np.array([get_B(i, systematic, theta) for i in range(len(B_hist))])
+        return np.round(S_hist + d_S + B_hist + d_B)
 
     def NLL(mu,theta):
 
-        n_pred = mu * S_hist + B_hist
 
+        d_S = np.array([get_S(i, systematic, theta) for i in range(len(S_hist))])
+        d_B = np.array([get_B(i, systematic, theta) for i in range(len(B_hist))])
+#        n_pred = mu * S_hist + B_hist
+        n_pred = mu * (S_hist + d_S )+ (B_hist + d_B)
         n_pred = np.maximum(
             n_pred,
             eps
@@ -202,7 +206,11 @@ def evaluate_shape_analysis(
     )
 
     result = compute_mu_shape(
-        saved_info
+        saved_info, 
+        
+        theta0=1.0,
+        
+        sigma=0.03
     )
 
     return result
