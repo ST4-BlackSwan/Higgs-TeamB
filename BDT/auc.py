@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 from HiggsML.datasets import download_dataset
 from boosted_decision_tree_scale_pos_weight import BoostedDecisionTreeScalePosWeight
-
+import numpy as np
 
 data = download_dataset(
     "blackSwan_data")
@@ -23,6 +23,14 @@ X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
     random_state=42,
     stratify=labels
 )
+
+print("--- Total weights ---")
+print("signal :", np.sum(weights[labels == 0]))
+print("noise :", np.sum(weights[labels == 1]))
+
+print("--- Test weights ---")
+print("signal :", np.sum(w_test[labels == 0]))
+print("noise :", np.sum(w_test[labels == 1]))
 
 bdt = BoostedDecisionTreeScalePosWeight()
 bdt.fit(X_train, y_train, w_train)
