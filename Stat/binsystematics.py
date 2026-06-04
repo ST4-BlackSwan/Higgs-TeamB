@@ -123,8 +123,8 @@ def compute_mu_shape(saved_info,systematic, theta0, sigma):
     def NLL(mu, theta):
         s_theta, b_theta = shifted_templates(theta, systematic)
 
-        n_obs = np.rint(np.maximum(s_theta + b_theta, 0.0)).astype(int)
-        n_pred = np.maximum(mu * s_theta + b_theta, eps)
+        n_obs = np.round(np.maximum(s_theta + b_theta, 0.0))
+        n_pred = np.round(np.maximum(mu * s_theta + b_theta, eps))
 
         return -2.0 * np.sum(poisson.logpmf(n_obs, n_pred)) + (theta - theta0) ** 2 / sigma ** 2
 
@@ -145,7 +145,7 @@ def compute_mu_shape(saved_info,systematic, theta0, sigma):
     # --------------------------------------------------
 
     m.limits["mu"] = (0, None)
-    m.fixed["mu"] = True
+    m.fixed["mu"]=True
     m.limits["theta"] = (theta0 - 3 * sigma, theta0 + 3 * sigma)
     # --------------------------------------------------
     # CHANGE #7
@@ -173,8 +173,8 @@ def compute_mu_shape(saved_info,systematic, theta0, sigma):
 
     del_mu_tot = del_mu_stat
 
-    theta_grid = np.linspace(theta0 - 3 * sigma, theta0 + 3 * sigma, 1000)
-    delta_profile = np.array([NLL(mu_hat, theta)for theta in theta_grid])
+    theta_grid = np.linspace(theta0 -sigma, theta0 +sigma, 1000000)
+    delta_profile = np.array([NLL(mu_hat, theta)for theta in theta_grid])-NLL(mu_hat, theta_hat)
     plt.figure(figsize=(8, 5))
     plt.plot(theta_grid, delta_profile, label="Profiled NLL")
     plt.axvline(theta_hat, color="red", linestyle="--", label=r"$\theta_{fit}$")
