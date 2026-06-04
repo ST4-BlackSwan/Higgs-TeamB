@@ -40,7 +40,7 @@ class BoostedDecisionTree:
         sum_w_background = np.sum(weights[labels == 0])
         sum_w_signal = np.sum(weights[labels == 1])
 
-        # Dynamicly computing the ratio
+        # Dynamically computing the ratio
         ratio = (sum_w_background / sum_w_signal) * self.scale_factor
         self.model.set_params(scale_pos_weight=ratio)
         print(f"[INFO] scale_pos_weight configuré à {ratio:.2f}")
