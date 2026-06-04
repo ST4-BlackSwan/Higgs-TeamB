@@ -173,23 +173,11 @@ def compute_mu_shape(saved_info,systematic, theta0, sigma):
 
     del_mu_tot = del_mu_stat
 
-    theta_grid = np.linspace(theta0 - 3 * sigma, theta0 + 3 * sigma, 200)
-
-    def profile_theta(theta_value):
-        result = minimize_scalar(
-            lambda mu_value: NLL(mu_value, theta_value),
-            bounds=(0.0, 5.0),
-            method="bounded",
-        )
-        return result.x, result.fun
-
-    profile_values = np.array([profile_theta(theta_i)[1] for theta_i in theta_grid])
-    profile_min = np.min(profile_values)
-    delta_profile = profile_values - profile_min
-
+    theta_grid = np.linspace(theta0 - 3 * sigma, theta0 + 3 * sigma, 1000)
+    delta_profile = np.array([NLL(mu_hat, theta)for theta in theta_grid])
     plt.figure(figsize=(8, 5))
     plt.plot(theta_grid, delta_profile, label="Profiled NLL")
-    plt.axvline(theta_hat, color="red", linestyle="--", label=r"$	heta_{fit}$")
+    plt.axvline(theta_hat, color="red", linestyle="--", label=r"$\theta_{fit}$")
     plt.axhline(0.0, color="gray", linestyle=":")
     plt.xlabel("theta")
     plt.ylabel("$\\Delta(-2\\log L)$")
