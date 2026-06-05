@@ -184,6 +184,8 @@ def compute_mu_shape(saved_info):
         
         "NLL" : NLL
 
+        "NLL_func": NLL
+
     }
 
 

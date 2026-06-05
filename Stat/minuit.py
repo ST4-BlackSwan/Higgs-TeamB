@@ -1,5 +1,13 @@
+import numpy as np
+import matplotlib.pyplot as plt
 from bincorrected import calculate_saved_info_shape, compute_mu_shape
 from stat_test import FakeModel, S, B, score, holdout
+
+# 1. On crée la figure 
+plt.figure(figsize=(10, 6))
+
+# Petites variables pour ajuster automatiquement l'axe X à la fin
+x_min, x_max = float('inf'), float('-inf')
 
 for n_bins in [1, 5, 10, 20]:
     saved_shape = calculate_saved_info_shape(
