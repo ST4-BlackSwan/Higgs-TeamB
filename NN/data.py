@@ -67,7 +67,7 @@ def load_and_clean_blackswan():
         "DER_sum_pt": "DER_sum_pt",
         "DER_pt_ratio_lep_had": "DER_pt_ratio_lep_had",
         "DER_met_phi_centrality": "DER_met_phi_centrality",
-        "DER_lep_eta_centrality": "DER_lep_eta_centrality"
+        "DER_lep_eta_centrality": "DER_lep_eta_centrality",
     }
 
     available_features = [
@@ -91,7 +91,14 @@ def load_and_clean_blackswan():
     return features, target, weights
 
 
-def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_split_ratio=0.2, random_seed=31415):
+def prepare_datasets(
+    features,
+    target,
+    weights,
+    train_val_split_ratio=0.75,
+    val_split_ratio=0.2,
+    random_seed=31415,
+):
     """
     Sépare en Train/Validation/Test de manière séquentielle pour le Test (conforme au framework FAIR Universe),
     et applique la normalisation des poids du Train et de la Validation de façon robuste.
@@ -104,17 +111,22 @@ def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_
 
     X_test = features.iloc[:test_rows].copy()
     y_test = target.iloc[:test_rows].copy()
-    w_test = weights.iloc[:test_rows].copy() 
+    w_test = weights.iloc[:test_rows].copy()
 
     # Données restantes pour l'entraînement et la validation
     X_train_val = features.iloc[test_rows:].copy()
     y_train_val = target.iloc[test_rows:].copy()
-    w_train_val = weights.iloc[test_rows:].copy() 
+    w_train_val = weights.iloc[test_rows:].copy()
 
     # 2. Séparation aléatoire (stratifiée) Train / Validation
     # On garde les Series intactes pour faire le calcul des poids proprement avec les index alignés
     X_train, X_val, y_train, y_val, w_train, w_val = train_test_split(
-        X_train_val, y_train_val, w_train_val, test_size=val_split_ratio, random_state=random_seed, stratify=y_train_val
+        X_train_val,
+        y_train_val,
+        w_train_val,
+        test_size=val_split_ratio,
+        random_state=random_seed,
+        stratify=y_train_val,
     )
 
     # 3. RENORMALISATION DES POIDS (TRAIN ET VAL) AVANT CONVERSION NUMPY
@@ -122,7 +134,7 @@ def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_
     train_signal_sum = w_train[y_train == 1].sum()
     train_bkg_sum = w_train[y_train == 0].sum()
     max_train_weight = max(train_signal_sum, train_bkg_sum)
-    
+
     w_train.loc[y_train == 1] *= max_train_weight / train_signal_sum
     w_train.loc[y_train == 0] *= max_train_weight / train_bkg_sum
 
@@ -130,17 +142,24 @@ def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_
     val_signal_sum = w_val[y_val == 1].sum()
     val_bkg_sum = w_val[y_val == 0].sum()
     max_val_weight = max(val_signal_sum, val_bkg_sum)
-    
+
     w_val.loc[y_val == 1] *= max_val_weight / val_signal_sum
     w_val.loc[y_val == 0] *= max_val_weight / val_bkg_sum
 
     # 4. Conversion finale en tableaux numpy 1D pour Keras
     return (
-        X_train.values, X_val.values, X_test.values,
-        y_train.values.flatten(), y_val.values.flatten(), y_test.values.flatten(),
-        w_train.values, w_val.values, w_test.values,
-        None 
+        X_train.values,
+        X_val.values,
+        X_test.values,
+        y_train.values.flatten(),
+        y_val.values.flatten(),
+        y_test.values.flatten(),
+        w_train.values,
+        w_val.values,
+        w_test.values,
+        None,
     )
+
 
 def plot_distributions(features, target, weights):
     """
@@ -186,9 +205,11 @@ if __name__ == "__main__":
 
     print("--- 3. Séparation, Scaler et Renormalisation des poids ---")
     # Correction: Mettre à jour l'unpacking pour correspondre aux 10 valeurs retournées
-    X_train, X_val, X_test, y_train, y_val, y_test, w_train, w_val, w_test, _ = prepare_datasets(
-        features, target, weights
+    X_train, X_val, X_test, y_train, y_val, y_test, w_train, w_val, w_test, _ = (
+        prepare_datasets(features, target, weights)
     )
 
     print("\n[Vérification des Shapes]")
-    print(f"Train features: {X_train.shape} | Val features: {X_val.shape} | Test features: {X_test.shape}")
+    print(
+        f"Train features: {X_train.shape} | Val features: {X_val.shape} | Test features: {X_test.shape}"
+    )

@@ -44,30 +44,37 @@ class NeuralNetwork:
         )
         self.scaler = StandardScaler()
 
-    def fit(self, train_data, y_train, validation_data=None, weights_train=None, weights_val=None):
+    def fit(
+        self,
+        train_data,
+        y_train,
+        validation_data=None,
+        weights_train=None,
+        weights_val=None,
+    ):
         # Normalisation des données d'entraînement
         X_train_scaled = self.scaler.fit_transform(train_data)
 
         # Préparation des données de validation si fournies
         validation_data_for_keras = None
-        monitor_metric = 'loss'
+        monitor_metric = "loss"
 
         if validation_data is not None:
             X_val_raw, y_val_raw = validation_data
             X_val_scaled = self.scaler.transform(X_val_raw)
             validation_data_for_keras = (X_val_scaled, y_val_raw)
-            
+
             if weights_val is not None:
                 validation_data_for_keras = (X_val_scaled, y_val_raw, weights_val)
-            
-            monitor_metric = 'val_loss'
+
+            monitor_metric = "val_loss"
 
         # --- FILET DE SÉCURITÉ OPTIMISÉ ---
         early_stopper = EarlyStopping(
-            monitor=monitor_metric,    
-            patience=7,                # Réduit de 15 à 7 : on coupe beaucoup plus vite si ça stagne !
-            restore_best_weights=True, # Indispensable pour rejeter les époques qui ont overfitté
-            verbose=1                  
+            monitor=monitor_metric,
+            patience=7,  # Réduit de 15 à 7 : on coupe beaucoup plus vite si ça stagne !
+            restore_best_weights=True,  # Indispensable pour rejeter les époques qui ont overfitté
+            verbose=1,
         )
 
         # --- LANCEMENT DE L'ENTRAÎNEMENT ---
@@ -76,15 +83,13 @@ class NeuralNetwork:
             y_train,
             sample_weight=weights_train,
             validation_data=validation_data_for_keras,
-            epochs=100,                
+            epochs=100,
             batch_size=2048,
             verbose=2,
-            callbacks=[early_stopper]  
+            callbacks=[early_stopper],
         )
         return history
 
     def predict(self, test_data):
         test_data = self.scaler.transform(test_data)
-        return (
-            self.model.predict(test_data, batch_size=2048).flatten().ravel()
-        )
+        return self.model.predict(test_data, batch_size=2048).flatten().ravel()
