@@ -92,8 +92,9 @@ def calculate_saved_info_shape(
 # FIT MU USING BINNED SHAPE LIKELIHOOD
 #################################################
 
-def compute_mu_shape(saved_info,systematic, theta0, sigma):
-
+#def compute_mu_shape(saved_info,systematic, theta0, sigma):
+def compute_mu_shape(saved_info, theta0_tes=1.0, theta0_jes=1.0, theta0_smet=0.0):
+    
     bins = saved_info["bins"]
 
     S_hist = saved_info["S_hist"]
@@ -112,31 +113,42 @@ def compute_mu_shape(saved_info,systematic, theta0, sigma):
     # This follows exactly the project statement.
     # --------------------------------------------------
 
-    def shifted_templates(theta, systematic):
-        """Return theta-dependent signal and background templates for the current nuisance value."""
-        delta_s = np.array([syst.get_S(i, systematic, theta) for i in range(len(S_hist))], dtype=float)
-        delta_b = np.array([syst.get_B(i, systematic, theta) for i in range(len(B_hist))], dtype=float)
+    def shifted_templates(tes, jes, smet):
+        delta_s = (
+            np.array([syst.get_S(i, "tes",   tes)   for i in range(len(S_hist))]) +
+            np.array([syst.get_S(i, "jes",   jes)   for i in range(len(S_hist))]) +
+            np.array([syst.get_S(i, "smet",  smet)  for i in range(len(S_hist))])
+        # bnorm pas encore disponible
+        )
+        delta_b = (
+            np.array([syst.get_B(i, "tes",   tes)   for i in range(len(B_hist))]) +
+            np.array([syst.get_B(i, "jes",   jes)   for i in range(len(B_hist))]) +
+            np.array([syst.get_B(i, "smet",  smet)  for i in range(len(B_hist))])
+        # bnorm pas encore disponible
+        )
         s_theta = np.maximum(S_hist + delta_s, 0.0)
         b_theta = np.maximum(B_hist + delta_b, 0.0)
         return s_theta, b_theta
-
-    def NLL(mu, theta):
-        s_theta, b_theta = shifted_templates(theta, systematic)
-
-        n_obs = np.round(np.maximum(s_theta + b_theta, 0.0))
-        n_pred = np.round(np.maximum(mu * s_theta + b_theta, eps))
-
-        return -2.0 * np.sum(poisson.logpmf(n_obs, n_pred)) + (theta - theta0) ** 2 / sigma ** 2
-
+    def log_poisson(n, lam):
+        return n * np.log(lam) - lam 
+    def NLL(mu, tes, jes, smet):
+        s_theta, b_theta = shifted_templates(tes, jes, smet)
+        
+        n_obs = s_theta + b_theta
+        n_pred = np.maximum(mu * s_theta + b_theta, eps)
+        return (
+            -2.0 * np.sum(log_poisson(n_obs, n_pred))
+            + (tes  - theta0_tes)**2  / 0.03**2
+            + (jes  - theta0_jes)**2  / 0.03**2
+            + (smet - theta0_smet)**2 / 3.0**2
+        )
+    
     # --------------------------------------------------
     # CHANGE #5
     # Use Minuit for the fit
     # --------------------------------------------------
 
-    m = Minuit(
-        NLL,
-        mu=1.0,theta=theta0
-    )
+    m = Minuit(NLL, mu=1.0, tes=theta0_tes, jes=theta0_jes, smet=theta0_smet)
 
     # --------------------------------------------------
     # CHANGE #6
@@ -146,57 +158,39 @@ def compute_mu_shape(saved_info,systematic, theta0, sigma):
 
     m.limits["mu"] = (0, None)
     m.fixed["mu"]=True
-    m.limits["theta"] = (theta0 - 3 * sigma, theta0 + 3 * sigma)
-    # --------------------------------------------------
-    # CHANGE #7
-    # MIGRAD:
-    # finds mu_hat
-    # --------------------------------------------------
+
 
     m.migrad()
 
-    # --------------------------------------------------
-    # CHANGE #8
-    # HESSE:
-    # computes sigma_mu
-    # --------------------------------------------------
 
     m.hesse()
 
-    mu_hat = m.values["mu"]
-    
+    mu_hat     = m.values["mu"]
     del_mu_stat = m.errors["mu"]
-    
-    theta_hat = m.values["theta"]
-    del_theta_stat = m.errors["theta"]
+
+    tes_hat    = m.values["tes"]
+    jes_hat    = m.values["jes"]
+    smet_hat   = m.values["smet"]
+
+    del_tes    = m.errors["tes"]
+    del_jes    = m.errors["jes"]
+    del_smet   = m.errors["smet"]
     del_mu_sys = 0.0
 
     del_mu_tot = del_mu_stat
 
-    theta_grid = np.linspace(theta0 -sigma, theta0 +sigma, 1000000)
-    delta_profile = np.array([NLL(mu_hat, theta)for theta in theta_grid])-NLL(mu_hat, theta_hat)
-    plt.figure(figsize=(8, 5))
-    plt.plot(theta_grid, delta_profile, label="Profiled NLL")
-    plt.axvline(theta_hat, color="red", linestyle="--", label=r"$\theta_{fit}$")
-    plt.axhline(0.0, color="gray", linestyle=":")
-    plt.xlabel("theta")
-    plt.ylabel("$\\Delta(-2\\log L)$")
-    plt.title("Profiled objective vs theta")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
     return {
-
-        "mu_hat": mu_hat,
-
-        "del_mu_stat": del_mu_stat,
-
-        "del_mu_sys": del_mu_sys,
-
-        "del_mu_tot": del_mu_tot,
-        "theta_hat": theta_hat,
-        "del_theta_stat": del_theta_stat
-
+        "mu_hat"      : mu_hat,
+        "del_mu_stat" : del_mu_stat,
+        "del_mu_sys"  : del_mu_sys,
+        "del_mu_tot"  : del_mu_tot,
+        "tes_hat"     : tes_hat,
+        "jes_hat"     : jes_hat,
+        "smet_hat"    : smet_hat,
+        "del_tes"     : del_tes,
+        "del_jes"     : del_jes,
+        "del_smet"    : del_smet,
+        "NLL"         : NLL,
     }
 
 
@@ -220,14 +214,35 @@ def evaluate_shape_analysis(
 
     result = compute_mu_shape(
         saved_info,
-        systematic="tes",  # Replace with the desired systematic
-        theta0=1.0,
-        sigma=0.1
+        theta0_tes=1.0,
+        theta0_jes=1.0,
+        theta0_smet=0.0
     )
+    
+    mu_grid = np.linspace(0.995, 1.005, 500)
+    nll_profiled = []
+    NLL = result["NLL"]
+    for mu_val in mu_grid:
+        m = Minuit(NLL, mu=mu_val, tes=1.0, jes=1.0, smet=0.0)
+        m.fixed["mu"] = True
+        m.migrad()
+        nll_profiled.append(m.fval)
+    
+    print(nll_profiled)
+    nll_profiled = np.array(nll_profiled) - min(nll_profiled)
+
+    plt.grid()
+    plt.plot(mu_grid, nll_profiled, label="NLL profilée (3 systématiques)")
+    plt.hlines(1, 0.99, 1.01, linestyle='--', color='gray')
+    plt.xlabel(r'$\mu$')
+    plt.ylabel(r'$-2\log\mathcal{L}(\mu)$')
+    plt.legend()
+    plt.show()
     print(f"Estimated mu: {result['mu_hat']}")
     print(f"Statistical uncertainty on mu: {result['del_mu_stat']}")
-    print(f"Estimated  tes : {result['theta_hat']}")
-    print(f"Statistical uncertainty on  tes : {result['del_theta_stat']}")
+    print(f"Estimated tes  : {result['tes_hat']} ± {result['del_tes']}")
+    print(f"Estimated jes  : {result['jes_hat']} ± {result['del_jes']}")
+    print(f"Estimated smet : {result['smet_hat']} ± {result['del_smet']}")
     return result
 
 evaluate_shape_analysis(stat.FakeModel(stat.score), stat.holdout)
