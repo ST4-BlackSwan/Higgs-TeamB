@@ -26,22 +26,27 @@ X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
 # here we use the hyperparameters found with the bayesian method.
 
 bdt = BoostedDecisionTreeScalePosWeight(
-    n_estimators=1000,
+    # n_estimators=1000,
+    # max_depth=9,
+    # learning_rate=0.08501869815505453,
+    # subsample=1.0,
+    # colsample_bytree=0.6,
+    # min_child_weight=1,
+    # tree_method="hist",
+    # random_state=31415,
+    # early_stopping_rounds=15
     max_depth=9,
-    learning_rate=0.08501869815505453,
-    subsample=1.0,
-    colsample_bytree=0.6,
-    min_child_weight=1,
-    tree_method="hist",
-    random_state=31415,
-    early_stopping_rounds=15
+    learning_rate=0.015619081519761545,
+    subsample=0.8,
+    colsample_bytree=1.0,
+    min_child_weight=4
 )
 
 bdt.fit(X_train, y_train, w_train)
 
 predictions = bdt.predict(X_test)
 
-np.savetxt("predictions.csv", predictions, delimiter=",", fmt="%d")
+np.savetxt("predictions.csv", predictions, delimiter=",", fmt="%.6f")
 
 thresholds = np.linspace(0, 1, 200)
 

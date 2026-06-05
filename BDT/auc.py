@@ -25,12 +25,12 @@ X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
 )
 
 print("--- Total weights ---")
-print("signal :", np.sum(weights[labels == 0]))
-print("noise :", np.sum(weights[labels == 1]))
+print("noise :", np.sum(weights[labels == 0]))
+print("signal :", np.sum(weights[labels == 1]))
 
 print("--- Test weights ---")
-print("signal :", np.sum(w_test[labels == 0]))
-print("noise :", np.sum(w_test[labels == 1]))
+print("noise :", np.sum(w_test[labels == 0]))
+print("signal :", np.sum(w_test[labels == 1]))
 
 bdt = BoostedDecisionTreeScalePosWeight()
 bdt.fit(X_train, y_train, w_train)
