@@ -69,48 +69,59 @@ def load_and_clean_blackswan():
     return features, target, weights
 
 
-def prepare_datasets(features, target, weights, train_size=0.75, random_seed=31415):
+def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_split_ratio=0.2, random_seed=31415):
     """
-    Sépare en Train/Test de manière séquentielle (conforme au framework FAIR Universe),
-    applique le StandardScaler et normalise les poids du Train.
+    Sépare en Train/Validation/Test de manière séquentielle pour le Test (conforme au framework FAIR Universe),
+    et applique la normalisation des poids du Train.
+    Retourne les données non scalées, car le NN gère sa propre mise à l'échelle.
     """
     np.random.seed(random_seed)
 
-    # Nombre total de lignes
+    # 1. Séparation initiale pour le Test set (séquentiel)
     total_rows = len(features)
-    
-    # Calcul de la taille du test set (25% si train_size = 0.75)
-    test_size = int((1 - train_size) * total_rows)
+    test_rows = int((1 - train_val_split_ratio) * total_rows)
 
-    # --- DECOUPAGE CONFORME AU PROTOCOLE CERN ---
-    # Le Test set prend STRICTEMENT les premières lignes (indices 0 à test_size)
-    X_test = features.iloc[:test_size].copy()
-    y_test = target.iloc[:test_size].copy()
-    w_test = weights.iloc[:test_size].copy()
+    X_test = features.iloc[:test_rows].copy()
+    y_test = target.iloc[:test_rows].copy()
+    w_test = weights.iloc[:test_rows].copy() # w_test reste un Series
 
-    # Le Train set prend le reste des lignes
-    X_train = features.iloc[test_size:].copy()
-    y_train = target.iloc[test_size:].copy()
-    w_train = weights.iloc[test_size:].copy()
+    # Données restantes pour l'entraînement et la validation
+    X_train_val = features.iloc[test_rows:].copy()
+    y_train_val = target.iloc[test_rows:].copy()
+    w_train_val = weights.iloc[test_rows:].copy() # w_train_val reste un Series
 
-    # 2. Standardisation des features (Moyenne 0, Variance 1)
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    # 2. Séparation des données d'entraînement et de validation
+    # Utilise train_test_split pour une répartition aléatoire des données restantes
+    X_train, X_val, y_train, y_val, w_train_temp, w_val = train_test_split(
+        X_train_val, y_train_val, w_train_val, test_size=val_split_ratio, random_state=random_seed, stratify=y_train_val
+    )
+    # X_train, X_val sont des DataFrames
+    # y_train, y_val sont des Series
+    # w_train_temp, w_val sont des Series
+
+    # Convertir y_train et y_val en tableaux numpy 1D pour Keras
+    y_train_np = y_train.values.flatten()
+    y_val_np = y_val.values.flatten()
 
     # 3. Renormalisation des poids du TRAIN uniquement
-    # On égalise uniquement le Train pour aider le NN à converger
-    class_weights_train = [w_train[y_train == 0].sum(), w_train[y_train == 1].sum()]
+    w_train = w_train_temp.copy() # Copie pour manipulation
+
+    # Pour la renormalisation, utiliser y_train_np pour l'indexation en s'assurant de l'alignement
+    y_train_aligned = pd.Series(y_train_np, index=w_train.index)
+
+    class_weights_train = [w_train[y_train_aligned == 0].sum(), w_train[y_train_aligned == 1].sum()]
     max_weight = max(class_weights_train)
 
-    for i in range(2):
-        w_train.loc[y_train == i] *= max_weight / class_weights_train[i]
+    w_train.loc[y_train_aligned == 0] *= max_weight / class_weights_train[0]
+    w_train.loc[y_train_aligned == 1] *= max_weight / class_weights_train[1]
 
-    # --- REGLE D'OR POUR LE TEST SET ---
-    # On ne touche ABSOLUMENT PAS aux poids du Test set. 
-    # Ils doivent rester bruts pour préserver les sommes physiques : S ~ 1015 et B ~ 1050370
-    
-    return X_train_scaled, X_test_scaled, y_train, y_test, w_train, w_test, scaler
+    # Convertir toutes les données en tableaux numpy pour Keras
+    return (
+        X_train.values, X_val.values, X_test.values,
+        y_train_np, y_val_np, y_test.values.flatten(),
+        w_train.values, w_val.values, w_test.values,
+        None # StandardScaler n'est plus retourné, la classe NN le gère en interne.
+    )
 
 
 def plot_distributions(features, target, weights):
@@ -162,4 +173,3 @@ if __name__ == "__main__":
 
     print("\n[Vérification des Shapes]")
     print(f"Train features: {X_train.shape} | Test features: {X_test.shape}")
-
