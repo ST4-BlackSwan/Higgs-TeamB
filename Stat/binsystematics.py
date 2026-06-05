@@ -271,10 +271,11 @@ def plot_mu_shape(saved_info, theta0, sigma):
     min_values_shifted = [v - min_nll for v in min_values]  # ✅ recentre à 0
 
     plt.plot(np.linspace(0, 2, 100), min_values_shifted)
-    plt.axhline(y=1, color='r', linestyle='--', label=r'$\Delta NLL = 1$')  # ✅ la ligne est maintenant à y=1
-    plt.title("Profil de la vraisemblance en fonction de θ")
+    plt.axhline(y=1, color='r', linestyle='--', label=r'$\Delta NLL = 1$')
+    plt.title(r"Profil de vraisemblance en fonction de $\mu$")
     plt.ylabel(r"$\min_{\theta} \left(-2 \ln \mathcal{L}(\mu, \theta)\right)$")
     plt.xlabel(r"$\mu$ (Signal Strength)")
+    plt.grid(True, linestyle='--', alpha=0.5)
     plt.legend()
     plt.show()
 
@@ -289,5 +290,5 @@ plot_mu_shape(calculate_saved_info_shape(
     FakeModel(score),
     holdout,
     number_bins=20,
-    threshold=0.5,
+    threshold=0.7,
 ), 1, 0.1)
