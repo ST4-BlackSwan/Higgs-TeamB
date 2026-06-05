@@ -1,0 +1,70 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split # N'oublie pas cet import s'il manquait
+from bincorrected import calculate_saved_info_shape, compute_mu_shape
+from stat_test import FakeModel
+from HiggsML.datasets import download_dataset
+# --- 1. CHARGEMENT ET SÉPARATION DES DONNÉES ---
+data = download_dataset("blackSwan_data")
+data.load_train_set()
+data_set = data.get_train_set()
+
+train_data = data_set.drop(columns=["labels", "weights", "detailed_labels"])
+labels = data_set["labels"]
+weights = data_set["weights"]
+
+X_train, X_test, y_train, y_test, w_train, w_test = train_test_split(
+    train_data,
+    labels,
+    weights,
+    test_size=0.3,
+    random_state=42,
+    stratify=labels
+)
+
+# --- 2. CHARGEMENT DES PRÉDICTIONS ---
+# Ligne 26 : Utilise le chemin complet pour être sûr que Python le trouve
+csv_scores = np.loadtxt("/Users/yassin_knzidr/Downloads/predictions 1.csv")
+
+# Petite vérification de sécurité
+print(f"Taille des prédictions : {len(csv_scores)}")
+print(f"Taille de y_test : {len(y_test)}")
+
+# --- 3. CRÉATION DU DICTIONNAIRE HOLDOUT ---
+# On utilise les labels et poids de test !
+# On ajoute .values pour convertir les colonnes Pandas en tableaux Numpy,
+# ce qui évite d'autres erreurs potentielles de format avec les fonctions de test.
+holdout = {
+    "data": csv_scores,
+    "labels": y_test.values,   
+    "weights": w_test.values
+}
+
+# --- 4. CALCULS ET CRÉATION DU GRAPHIQUE ---
+plt.figure(figsize=(10, 6))
+
+# Affichage des valeurs dans la console
+for n_bins in [1, 5, 10, 20]:
+    saved_shape = calculate_saved_info_shape(
+        FakeModel(csv_scores), holdout, number_bins=n_bins
+    )
+    result = compute_mu_shape(saved_shape)
+    print(f"n_bins={n_bins:2d} : mu={result['mu_hat']:.3f} ± {result['del_mu_stat']:.3f}")
+
+# Tracé des courbes NLL
+mu_values = np.linspace(0.5, 1.5, 200)
+
+for n_bins in [1, 5, 10, 20]:
+    saved_shape = calculate_saved_info_shape(
+        FakeModel(csv_scores), holdout, number_bins=n_bins
+    )
+    result = compute_mu_shape(saved_shape)
+    nll_values = [result["NLL_func"](mu) for mu in mu_values]
+    plt.plot(mu_values, nll_values - min(nll_values), label=f"n_bins={n_bins}")
+
+plt.xlabel(r'$\mu$')
+plt.ylabel(r'$-2\log\mathcal{L}(\mu)$')
+plt.hlines(1, 0.5, 1.5, linestyle='--', color='gray')
+plt.legend()
+plt.grid()
+plt.show()
