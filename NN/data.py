@@ -69,7 +69,14 @@ def load_and_clean_blackswan():
     return features, target, weights
 
 
-def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_split_ratio=0.2, random_seed=31415):
+def prepare_datasets(
+    features,
+    target,
+    weights,
+    train_val_split_ratio=0.75,
+    val_split_ratio=0.2,
+    random_seed=31415,
+):
     """
     Sépare en Train/Validation/Test de manière séquentielle pour le Test (conforme au framework FAIR Universe),
     et applique la normalisation des poids du Train.
@@ -83,17 +90,22 @@ def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_
 
     X_test = features.iloc[:test_rows].copy()
     y_test = target.iloc[:test_rows].copy()
-    w_test = weights.iloc[:test_rows].copy() # w_test reste un Series
+    w_test = weights.iloc[:test_rows].copy()  # w_test reste un Series
 
     # Données restantes pour l'entraînement et la validation
     X_train_val = features.iloc[test_rows:].copy()
     y_train_val = target.iloc[test_rows:].copy()
-    w_train_val = weights.iloc[test_rows:].copy() # w_train_val reste un Series
+    w_train_val = weights.iloc[test_rows:].copy()  # w_train_val reste un Series
 
     # 2. Séparation des données d'entraînement et de validation
     # Utilise train_test_split pour une répartition aléatoire des données restantes
     X_train, X_val, y_train, y_val, w_train_temp, w_val = train_test_split(
-        X_train_val, y_train_val, w_train_val, test_size=val_split_ratio, random_state=random_seed, stratify=y_train_val
+        X_train_val,
+        y_train_val,
+        w_train_val,
+        test_size=val_split_ratio,
+        random_state=random_seed,
+        stratify=y_train_val,
     )
     # X_train, X_val sont des DataFrames
     # y_train, y_val sont des Series
@@ -104,12 +116,15 @@ def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_
     y_val_np = y_val.values.flatten()
 
     # 3. Renormalisation des poids du TRAIN uniquement
-    w_train = w_train_temp.copy() # Copie pour manipulation
+    w_train = w_train_temp.copy()  # Copie pour manipulation
 
     # Pour la renormalisation, utiliser y_train_np pour l'indexation en s'assurant de l'alignement
     y_train_aligned = pd.Series(y_train_np, index=w_train.index)
 
-    class_weights_train = [w_train[y_train_aligned == 0].sum(), w_train[y_train_aligned == 1].sum()]
+    class_weights_train = [
+        w_train[y_train_aligned == 0].sum(),
+        w_train[y_train_aligned == 1].sum(),
+    ]
     max_weight = max(class_weights_train)
 
     w_train.loc[y_train_aligned == 0] *= max_weight / class_weights_train[0]
@@ -117,10 +132,16 @@ def prepare_datasets(features, target, weights, train_val_split_ratio=0.75, val_
 
     # Convertir toutes les données en tableaux numpy pour Keras
     return (
-        X_train.values, X_val.values, X_test.values,
-        y_train_np, y_val_np, y_test.values.flatten(),
-        w_train.values, w_val.values, w_test.values,
-        None # StandardScaler n'est plus retourné, la classe NN le gère en interne.
+        X_train.values,
+        X_val.values,
+        X_test.values,
+        y_train_np,
+        y_val_np,
+        y_test.values.flatten(),
+        w_train.values,
+        w_val.values,
+        w_test.values,
+        None,  # StandardScaler n'est plus retourné, la classe NN le gère en interne.
     )
 
 
