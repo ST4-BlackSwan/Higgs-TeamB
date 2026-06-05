@@ -1,5 +1,5 @@
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout  # <-- RÉIMPORTATION DU DROPOUT
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping  # Importation de l'Early Stopping
 from sklearn.preprocessing import StandardScaler
@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 class NeuralNetwork:
     """
     Class implementing a sequential neural network classifier with Keras.
-    Architecture V2 (64->64->64->32) épurée (sans Dropout) avec Early Stopping.
+    Architecture V2 (64->64->32->32) RECONSTRUITE avec Dropout pour briser l'overfitting.
     """
 
     def __init__(self, train_data):
@@ -17,67 +17,57 @@ class NeuralNetwork:
         # Nombre de variables d'entrée (features physiques)
         n_dim = train_data.shape[1]
 
-        # --- ARCHITECTURE V2 ÉPURÉE (SANS DROPOUT) ---
+        # --- ARCHITECTURE V2 SÉCURISÉE ---
         # 1. Couche d'entrée + Première couche cachée
         self.model.add(Dense(64, input_dim=n_dim, activation="swish"))
+        self.model.add(Dropout(0.3))  # 30% de déconnexion pour forcer la généralisation
 
         # 2. Deuxième couche cachée
         self.model.add(Dense(64, activation="swish"))
-
-        self.model.add(Dense(64, activation="swish"))
+        self.model.add(Dropout(0.2))
 
         # 3. Troisième couche cachée
-        self.model.add(Dense(64, activation="swish"))
+        self.model.add(Dense(32, activation="swish"))
+        self.model.add(Dropout(0.2))
 
-        # 4. Quatrième couche cachée (transition douce)
+        # 4. Quatrième couche cachée (transition douce avant la sortie)
         self.model.add(Dense(32, activation="swish"))
 
-        self.model.add(Dense(32, activation="swish"))
-
-        # 5. Couche de sortie (Classification binaire : Signal=1 / Background=0)
+        # 5. Couche de sortie (Classification binaire)
         self.model.add(Dense(1, activation="sigmoid"))
 
-        # Compilation avec un Learning Rate de 0.001 adapté au grand batch
+        # Compilation avec un Learning Rate de 0.001 (plus stable pour éviter les sur-ajustements)
         self.model.compile(
             loss="binary_crossentropy",
-            optimizer=Adam(learning_rate=0.002),
+            optimizer=Adam(learning_rate=0.001),  # Réduit de 0.002 à 0.001
             metrics=["accuracy"],
         )
         self.scaler = StandardScaler()
 
-    def fit(
-        self,
-        train_data,
-        y_train,
-        validation_data=None,
-        weights_train=None,
-        weights_val=None,
-    ):
+    def fit(self, train_data, y_train, validation_data=None, weights_train=None, weights_val=None):
         # Normalisation des données d'entraînement
         X_train_scaled = self.scaler.fit_transform(train_data)
 
         # Préparation des données de validation si fournies
         validation_data_for_keras = None
-        monitor_metric = "loss"  # Par défaut, on surveille la perte d'entraînement
+        monitor_metric = 'loss'
 
         if validation_data is not None:
             X_val_raw, y_val_raw = validation_data
             X_val_scaled = self.scaler.transform(X_val_raw)
             validation_data_for_keras = (X_val_scaled, y_val_raw)
-
+            
             if weights_val is not None:
                 validation_data_for_keras = (X_val_scaled, y_val_raw, weights_val)
+            
+            monitor_metric = 'val_loss'
 
-            monitor_metric = (
-                "val_loss"  # Si on a de la validation, on surveille val_loss
-            )
-
-        # --- FILET DE SÉCURITÉ (EARLY STOPPING) ---
+        # --- FILET DE SÉCURITÉ OPTIMISÉ ---
         early_stopper = EarlyStopping(
-            monitor=monitor_metric,  # Surveille la courbe de perte appropriée
-            patience=15,  # Tolère 15 époques sans amélioration avant de couper
-            restore_best_weights=True,  # Recommence à la fin avec les poids de la MEILLEURE époque
-            verbose=1,  # Affiche un message explicite à l'arrêt
+            monitor=monitor_metric,    
+            patience=7,                # Réduit de 15 à 7 : on coupe beaucoup plus vite si ça stagne !
+            restore_best_weights=True, # Indispensable pour rejeter les époques qui ont overfitté
+            verbose=1                  
         )
 
         # --- LANCEMENT DE L'ENTRAÎNEMENT ---
@@ -86,16 +76,15 @@ class NeuralNetwork:
             y_train,
             sample_weight=weights_train,
             validation_data=validation_data_for_keras,
-            epochs=100,  # Monté à 100 sous la protection de l'Early Stopping
+            epochs=100,                
             batch_size=2048,
             verbose=2,
-            callbacks=[early_stopper],
+            callbacks=[early_stopper]  
         )
         return history
 
     def predict(self, test_data):
-        # Application des paramètres de standardisation calculés sur le Train set
         test_data = self.scaler.transform(test_data)
-
-        # Prédiction accélérée également par lot
-        return self.model.predict(test_data, batch_size=2048).flatten().ravel()
+        return (
+            self.model.predict(test_data, batch_size=2048).flatten().ravel()
+        )
