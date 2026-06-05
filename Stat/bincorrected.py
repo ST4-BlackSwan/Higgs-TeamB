@@ -2,10 +2,10 @@ import numpy as np
 from iminuit import Minuit
 from scipy.stats import poisson
 
-
 #################################################
 # BUILD SHAPE TEMPLATES
 #################################################
+
 
 def calculate_saved_info_shape(
     model,
@@ -20,9 +20,7 @@ def calculate_saved_info_shape(
     # so that both XGB and NN outputs work
     # --------------------------------------------------
 
-    score = model.predict(
-        holdout_set["data"]
-    ).flatten()
+    score = model.predict(holdout_set["data"]).flatten()
 
     labels = holdout_set["labels"]
     weights = holdout_set["weights"]
@@ -42,11 +40,7 @@ def calculate_saved_info_shape(
     weight_signal = weights[mask_signal]
     weight_background = weights[mask_background]
 
-    bins = np.linspace(
-        threshold,
-        1.0,
-        number_bins + 1
-    )
+    bins = np.linspace(threshold, 1.0, number_bins + 1)
 
     # --------------------------------------------------
     # Weighted templates
@@ -55,17 +49,9 @@ def calculate_saved_info_shape(
     # B_hist[i] = expected background yield in bin i
     # --------------------------------------------------
 
-    S_hist, edges = np.histogram(
-        score_signal,
-        bins=bins,
-        weights=weight_signal
-    )
+    S_hist, edges = np.histogram(score_signal, bins=bins, weights=weight_signal)
 
-    B_hist, _ = np.histogram(
-        score_background,
-        bins=bins,
-        weights=weight_background
-    )
+    B_hist, _ = np.histogram(score_background, bins=bins, weights=weight_background)
 
     # --------------------------------------------------
     # CHANGE #3
@@ -75,20 +61,13 @@ def calculate_saved_info_shape(
     S_hist = np.maximum(S_hist, 0.0)
     B_hist = np.maximum(B_hist, 0.0)
 
-    return {
-
-        "bins": edges,
-
-        "S_hist": S_hist,
-
-        "B_hist": B_hist
-
-    }
+    return {"bins": edges, "S_hist": S_hist, "B_hist": B_hist}
 
 
 #################################################
 # FIT MU USING BINNED SHAPE LIKELIHOOD
 #################################################
+
 
 def compute_mu_shape(saved_info):
 
@@ -110,35 +89,22 @@ def compute_mu_shape(saved_info):
     # This follows exactly the project statement.
     # --------------------------------------------------
 
-    n_obs = np.round(
-        S_hist + B_hist
-    )
+    n_obs = np.round(S_hist + B_hist)
 
     def NLL(mu):
 
         n_pred = mu * S_hist + B_hist
 
-        n_pred = np.maximum(
-            n_pred,
-            eps
-        )
+        n_pred = np.maximum(n_pred, eps)
 
-        return -2.0 * np.sum(
-            poisson.logpmf(
-                n_obs,
-                n_pred
-            )
-        )
+        return -2.0 * np.sum(poisson.logpmf(n_obs, n_pred))
 
     # --------------------------------------------------
     # CHANGE #5
     # Use Minuit for the fit
     # --------------------------------------------------
 
-    m = Minuit(
-        NLL,
-        mu=1.0
-    )
+    m = Minuit(NLL, mu=1.0)
 
     # --------------------------------------------------
     # CHANGE #6
@@ -173,25 +139,19 @@ def compute_mu_shape(saved_info):
     del_mu_tot = del_mu_stat
 
     return {
-
         "mu_hat": mu_hat,
-
         "del_mu_stat": del_mu_stat,
-
         "del_mu_sys": del_mu_sys,
-
         "del_mu_tot": del_mu_tot,
-        
-        "NLL" : NLL,
-
-        "NLL_func": NLL
-
+        "NLL": NLL,
+        "NLL_func": NLL,
     }
 
 
 #################################################
 # PUBLIC INTERFACE
 #################################################
+
 
 def evaluate_shape_analysis(
     model,
@@ -207,8 +167,6 @@ def evaluate_shape_analysis(
         threshold=threshold,
     )
 
-    result = compute_mu_shape(
-        saved_info
-    )
+    result = compute_mu_shape(saved_info)
 
     return result

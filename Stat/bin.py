@@ -3,34 +3,44 @@ from HiggsML.systematics import systematics
 from iminuit import Minuit
 from scipy.stats import poisson
 
-def binning_signal(holdout_set,model,number_bins, threshold):
-    bins= np.linspace(threshold, 1, number_bins + 1)
-    set_signal=holdout_set["data"][holdout_set["labels"]==1]
-    set_background=holdout_set["data"][holdout_set["labels"]==0]
-    score_signal=model.predict(set_signal)
-    score_background=model.predict(set_background)
-    hs,edges= np.histogram(score_signal, bins=bins, weights=holdout_set["weights"][holdout_set["labels"]==1])
-    hb,edges= np.histogram(score_background, bins=bins, weights=holdout_set["weights"][holdout_set["labels"]==0])
-    return hs, hb,edges
 
-def compute_mu_shape(score,weight,saved_info,):
-    
+def binning_signal(holdout_set, model, number_bins, threshold):
+    bins = np.linspace(threshold, 1, number_bins + 1)
+    set_signal = holdout_set["data"][holdout_set["labels"] == 1]
+    set_background = holdout_set["data"][holdout_set["labels"] == 0]
+    score_signal = model.predict(set_signal)
+    score_background = model.predict(set_background)
+    hs, edges = np.histogram(
+        score_signal,
+        bins=bins,
+        weights=holdout_set["weights"][holdout_set["labels"] == 1],
+    )
+    hb, edges = np.histogram(
+        score_background,
+        bins=bins,
+        weights=holdout_set["weights"][holdout_set["labels"] == 0],
+    )
+    return hs, hb, edges
+
+
+def compute_mu_shape(
+    score,
+    weight,
+    saved_info,
+):
+
     score = score.flatten()
 
-    bins   = saved_info["bins"]
+    bins = saved_info["bins"]
     S_hist = saved_info["S_hist"]
     B_hist = saved_info["B_hist"]
-    score_min=None#
-    mask = score > score_min # le seuil de tri des signaux 
+    score_min = None  #
+    mask = score > score_min  # le seuil de tri des signaux
 
-    score  = score[mask]
+    score = score[mask]
     weight = weight[mask]
 
-    n_obs = np.histogram(
-        score,
-        bins=bins,
-        weights=weight
-    )[0]
+    n_obs = np.histogram(score, bins=bins, weights=weight)[0]
 
     eps = 1e-12
 
@@ -38,22 +48,11 @@ def compute_mu_shape(score,weight,saved_info,):
 
         n_pred = mu * S_hist + B_hist
 
-        n_pred = np.maximum(
-            n_pred,
-            eps
-        )
+        n_pred = np.maximum(n_pred, eps)
 
-        return -2 * np.sum(
-            poisson.logpmf(
-                np.round(n_obs),
-                n_pred
-            )
-        )
+        return -2 * np.sum(poisson.logpmf(np.round(n_obs), n_pred))
 
-    m = Minuit(
-        NLL,
-        mu=1.0
-    )
+    m = Minuit(NLL, mu=1.0)
 
     m.limits["mu"] = (0, None)
 
