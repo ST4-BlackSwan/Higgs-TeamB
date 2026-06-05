@@ -4,7 +4,7 @@ from iminuit import Minuit
 from scipy.stats import poisson
 from stat_test import FakeModel, S,B, score, holdout 
 import matplotlib.pyplot as plt
-
+from données_syst import get_S, get_B
 
 #################################################
 # BUILD SHAPE TEMPLATES
@@ -121,10 +121,7 @@ def compute_mu_shape(saved_info, theta0, sigma):
 
     def NLL(mu,theta):
 
-
-        d_S = np.array([get_S(i, systematic, theta) for i in range(len(S_hist))])
-        d_B = np.array([get_B(i, systematic, theta) for i in range(len(B_hist))])
-#        n_pred = mu * S_hist + B_hist
+#       n_pred = mu * S_hist + B_hist
         n_pred = mu * (S_hist + d_S )+ (B_hist + d_B)
         n_pred = np.maximum(
             n_pred,
@@ -221,7 +218,7 @@ def evaluate_shape_analysis(
 
 
 
-def plot_mu_shape(saved_info, theta0, sigma):
+def plot_mu_shape(saved_info, theta0, sigma,systematic):
     bins = saved_info["bins"]
 
     S_hist = saved_info["S_hist"]
@@ -241,9 +238,9 @@ def plot_mu_shape(saved_info, theta0, sigma):
     # --------------------------------------------------
 
     def obs(theta):        #ask systematics for the exact function
-        return np.round(
-            S_hist + B_hist
-        )
+        d_S = np.array([get_S(i, systematic, theta) for i in range(len(S_hist))])
+        d_B = np.array([get_B(i, systematic, theta) for i in range(len(B_hist))])
+        return np.round(S_hist + d_S + B_hist + d_B)
 
     def NLL(mu,theta):
 
@@ -255,14 +252,14 @@ def plot_mu_shape(saved_info, theta0, sigma):
         )
         n_obs = obs(theta)
         
-        return -2.0 * np.sum(poisson.logpmf(n_obs, n_pred)) +np.sum((theta-theta0)**2/sigma**2)
+        return -2.0 * np.sum(poisson.logpmf(n_obs, n_pred)) + (theta-theta0)**2/sigma**2
     
     theta_hat = []
     min_values = []
     del_theta_stat = []   # ✅ initialisée
     del_theta_tot = []    # ✅ initialisée
 
-    for mu_val in np.linspace(0.8, 1.2, 100):
+    for mu_val in np.linspace(0.5, 2, 100):
         m = Minuit(NLL, mu=mu_val, theta=theta0)
         m.fixed["mu"] = True
         m.limits["mu"] = (0, None)
@@ -283,13 +280,13 @@ def plot_mu_shape(saved_info, theta0, sigma):
     min_nll = min(min_values)
     min_values_shifted = [v - min_nll for v in min_values]
 
-    plt.plot(np.linspace(0, 2, 100), min_values_shifted)
+    plt.plot(np.linspace(0.5, 2, 100), min_values_shifted)
     plt.axhline(y=1, color='r', linestyle='--', label=r'$\Delta NLL = 1$')
-    plt.title("Profil de la vraisemblance en fonction de $\mu$")
+    plt.title(f"Profil de la vraisemblance en fonction de , avec systématique {systematic}")
     plt.ylabel(r"$\min_{\theta} \left(-2 \ln \mathcal{L}(\mu, \theta)\right)$")
     plt.xlabel(r"$\mu$ (Signal Strength)")
 
-    mu_values = np.linspace(0, 2, 100)
+    mu_values = np.linspace(0.5, 2, 100)
 
     crossings = []
     for i in range(len(min_values_shifted) - 1):
@@ -328,6 +325,6 @@ def plot_mu_shape(saved_info, theta0, sigma):
 plot_mu_shape(calculate_saved_info_shape(
     FakeModel(score),
     holdout,
-    number_bins=20,
+    number_bins=10,
     threshold=0.7,
-), 1, 0.1)
+), 1, 0.1,systematic="tes")
