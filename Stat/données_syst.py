@@ -21,9 +21,9 @@ S_change_10_bins={"tes":[(-0.069978714,-0.22305965),(-0.40994644,0.07932472),(-0
 B_change_10_bins={"tes":[(-49.93158,89.273865),(-79.42572,76.80994),(-70.66394,96.64331),(-64.57843,87.87457),(-80.95215,94.26416),(-94.34241,87.534485),(-89.66882,117.510376),(-131.97876,123.85266),(-133.91943,172.97803),(-170.53503,208.50867)], "jes":[(-15.348328,28.817322),(-32.309753,29.985413),(-18.96997,29.578003),(-22.289185,35.654602),(-28.55011,30.027893),(-38.52722,24.848083),(-27.017517,47.178467),(-66.29614,39.41925),(-60.1521,72.68469),(-108.97449,125.78699)], "bnorm":[(),(),(),(),(),(),(),(),(),()], "smet":[(0,39.23517),(0,18.894775),(0,36.115845),(0,17.287231),(0,18.018005),(0,26.924988),(0,7.3653564),(0,32.6557),(0,38.76953),(0,15.425049)]}
 
 def get_S (bin, systematic,value):
-    return  (S_change_10_bins["systematic"][bin][1]-S_change_10_bins["systematic"][bin][0])/(evaluation["systematic"][1]-evaluation["systematic"][0])*(value-evaluation["systematic"][0])+S_change_10_bins["systematic"][bin][0]
+    return  (S_change_10_bins[systematic][bin][1]-S_change_10_bins[systematic][bin][0])/(evaluation[systematic][1]-evaluation[systematic][0])*(value-evaluation[systematic][0])+S_change_10_bins[systematic][bin][0]
     
     
 def get_B (bin, systematic,value):
-    return  (B_change_10_bins["systematic"][bin][1]-B_change_10_bins["systematic"][bin][0])/(evaluation["systematic"][1]-evaluation["systematic"][0])*(value-evaluation["systematic"][0])+B_change_10_bins["systematic"][bin][0]
+    return  (B_change_10_bins[systematic][bin][1]-B_change_10_bins[systematic][bin][0])/(evaluation[systematic][1]-evaluation[systematic][0])*(value-evaluation[systematic][0])+B_change_10_bins[systematic][bin][0]
     
