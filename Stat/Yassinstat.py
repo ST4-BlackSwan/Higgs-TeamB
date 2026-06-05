@@ -24,7 +24,9 @@ def plot_likelihood_profile(saved_info):
     min_nll = np.min(nll_vals)
     delta_nll = nll_vals - min_nll
     # Ligne 26 : Utilise le chemin complet pour être sûr que Python le trouve
-    csv_scores = np.loadtxt("/Users/yassin_knzidr/Documents/GitHub/Higgs-TeamB/Stat/predictions 1.csv")
+    csv_scores = np.loadtxt(
+        "/Users/yassin_knzidr/Documents/GitHub/Higgs-TeamB/Stat/predictions 1.csv"
+    )
 
     # Extraction naïve des bornes à 1 sigma (où Delta NLL approx 1)
     # C'est juste pour le plot, iminuit le fait plus proprement
