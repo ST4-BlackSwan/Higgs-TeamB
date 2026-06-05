@@ -270,13 +270,42 @@ def plot_mu_shape(saved_info, theta0, sigma):
     min_nll = min(min_values)
     min_values_shifted = [v - min_nll for v in min_values]  # ✅ recentre à 0
 
+    min_nll = min(min_values)
+    min_values_shifted = [v - min_nll for v in min_values]
+
     plt.plot(np.linspace(0, 2, 100), min_values_shifted)
     plt.axhline(y=1, color='r', linestyle='--', label=r'$\Delta NLL = 1$')
-    plt.title(r"Profil de vraisemblance en fonction de $\mu$")
+    plt.title("Profil de la vraisemblance en fonction de $\mu$")
     plt.ylabel(r"$\min_{\theta} \left(-2 \ln \mathcal{L}(\mu, \theta)\right)$")
     plt.xlabel(r"$\mu$ (Signal Strength)")
-    plt.grid(True, linestyle='--', alpha=0.5)
+
+    mu_values = np.linspace(0, 2, 100)
+
+    crossings = []
+    for i in range(len(min_values_shifted) - 1):
+        if (min_values_shifted[i] - 1) * (min_values_shifted[i+1] - 1) < 0:
+            mu_cross = mu_values[i] + (1 - min_values_shifted[i]) * (mu_values[i+1] - mu_values[i]) / (min_values_shifted[i+1] - min_values_shifted[i])
+            crossings.append(mu_cross)
+
+    if len(crossings) >= 2:
+        mu_minus = crossings[0]
+        mu_plus  = crossings[1]
+        sigma_mu = mu_plus - mu_minus
+
+    plt.axvline(x=mu_minus, color='g', linestyle=':', label=rf'$\mu_- = {mu_minus:.3f}$')
+    plt.axvline(x=mu_plus,  color='b', linestyle=':', label=rf'$\mu_+ = {mu_plus:.3f}$')
+
+    plt.text(
+        0.05, 0.85,
+        rf"$\sigma_\mu = \mu_+ - \mu_- = {sigma_mu:.3f}$",
+        transform=plt.gca().transAxes,
+        fontsize=12,
+        color='black',
+        bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round')
+    )
+
     plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
 
     return {
