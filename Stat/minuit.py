@@ -20,7 +20,7 @@ mu_values = np.linspace(0.5 , 1.5, 200)
 for n_bins in [1, 5, 10, 20]:
     saved_shape = calculate_saved_info_shape(FakeModel(score), holdout, number_bins=n_bins)
     result = compute_mu_shape(saved_shape)
-    nll_values = [result["NLL"](mu) for mu in mu_values]
+    nll_values = [result["NLL_func"](mu) for mu in mu_values]
     plt.plot(mu_values, nll_values - min(nll_values), label=f"n_bins={n_bins}")
 
 plt.xlabel(r'$\mu$')
